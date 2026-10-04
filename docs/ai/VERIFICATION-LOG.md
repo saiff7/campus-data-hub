@@ -26,8 +26,23 @@ Environment: macOS 15 on arm64; Docker Desktop 29.4 with Rosetta; SQL Server 202
 | SQL style | `sqlfluff lint database` (T-SQL) | Clean. Four layout rules are excluded with reasons in `.sqlfluff`. RF01 is suppressed in one seed block whose correlated `EXCEPT` references SQLFluff cannot resolve |
 | Repository hygiene | `pre-commit run --all-files` (includes gitleaks) | All hooks pass. **Found:** the hooks rewrote `BLUEPRINT.md` Markdown line breaks; the file was restored and excluded |
 | CI workflow | YAML parse; `uv lock --check` | Valid. The workflow itself was **not** run here; first proof will be the GitHub Actions run on push |
-| End-to-end bootstrap | `make clean CONFIRM=1` followed by `make bootstrap` | Recorded in the Part 1 hand-off, below |
 
-## Part 1 hand-off checks
+## Part 1 hand-off checks (clean clone)
 
-Recorded after the final end-to-end run (see the commit that adds this section).
+The database volume was deleted (`make clean CONFIRM=1`), the branch was cloned into a new
+directory, and only `.env` was copied in.
+
+| Acceptance criterion | Evidence | Result |
+|---|---|---|
+| A clean clone can start SQL Server, build DACPACs, deploy, generate source data and pass smoke tests | `make bootstrap` in the fresh clone | **First attempt found a defect:** in a long directory path, uv's console-script launcher becomes a `/bin/sh` trampoline and macOS SIP strips `DYLD_LIBRARY_PATH`, so the OpenSSL fix never reached Python. **Fix:** the Makefile runs `python -m`. **Re-run from a new clean clone:** exit 0 in 35 s (image already pulled) |
+| Re-running setup is idempotent | Second `make bootstrap` | Exit 0 in 23 s, 0 schema objects created, altered or dropped, smoke test passed, dataset fingerprint unchanged |
+| Every table has a primary key, appropriate types, nullability, defaults and documented purpose | SQL project build; `docs/architecture/erd.md`; table comments for non-obvious rules | 21 source tables and 9 CampusDataOps tables, each with a primary key and UTC audit timestamps |
+| Synthetic data contains deliberate edge cases but no real student data | `test_edge_cases.py`, `test_safe_identifiers.py`, smoke test edge-case checks | 6 edge cases present; all emails `@example.com`; all phones `555-01xx`; no SSN-shaped values |
+| Tests pass | `make test`, `make test-db`, `make lint` in the clean clone | 74 + 10 tests pass; Ruff, Ruff format and SQLFluff clean; no audit rows left behind |
+| Secrets are absent from Git history | `gitleaks git` over all commits; `git log --all --name-only` | No leaks in 7 commits; `.env` never committed |
+
+### Not verified here
+
+- The GitHub Actions workflow has not run yet; it needs a push to GitHub.
+- SqlPackage was run through its bundled .NET 8 build on the installed .NET 10.0.7 runtime, because
+  the .NET 10 build needs runtime 10.0.11. Updating the .NET SDK removes the need for the override.

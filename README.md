@@ -57,7 +57,7 @@ See [docs/architecture/system-context.md](docs/architecture/system-context.md) a
 | Tool | Notes |
 |---|---|
 | Docker Desktop with Compose v2 | On Apple Silicon enable *Settings → General → Use Rosetta for x86_64/amd64 emulation*; the SQL Server image is amd64-only |
-| .NET SDK 8 or later | Builds the SDK-style SQL projects (`Microsoft.Build.Sql`) |
+| .NET SDK 10 | Builds the SDK-style SQL projects (`Microsoft.Build.Sql` 2.3); verified with 10.0.203 |
 | SqlPackage | `dotnet tool install -g microsoft.sqlpackage`, with `~/.dotnet/tools` on `PATH` |
 | sqlcmd | `brew install sqlcmd` (go-sqlcmd) or `mssql-tools18` |
 | Microsoft ODBC Driver 18 for SQL Server | Required by `pyodbc` |
@@ -103,6 +103,17 @@ The SqlPackage tool targets a newer .NET 10 patch than some SDK installs provide
 
 ```bash
 export SQLPACKAGE="dotnet exec --roll-forward Major $(find ~/.dotnet/tools/.store/microsoft.sqlpackage -path '*net8.0*' -name sqlpackage.dll | head -1)"
+```
+
+### If Python reports "OpenSSL library could not be loaded" (macOS)
+
+Homebrew's `msodbcsql18` can install OpenSSL 4 and point the unversioned `openssl` alias at it, but
+ODBC Driver 18 loads only OpenSSL 1.x or 3.x. The Makefile handles this automatically: when
+`openssl@3` is installed, Python commands run with `DYLD_LIBRARY_PATH` set to its libraries. If you
+run Python outside Make, use the same prefix:
+
+```bash
+DYLD_LIBRARY_PATH="$(brew --prefix openssl@3)/lib" uv run python -m campus_ops.cli summary
 ```
 
 ## Synthetic data
