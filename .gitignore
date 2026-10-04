@@ -1,0 +1,30 @@
+# Secrets
+.env
+*.env.local
+
+# .NET / SQL projects
+bin/
+obj/
+*.dacpac
+*.user
+.vs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Generated local output
+/out/
+*.log
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

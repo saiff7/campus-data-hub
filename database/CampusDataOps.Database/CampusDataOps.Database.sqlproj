@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build">
+  <Sdk Name="Microsoft.Build.Sql" Version="2.3.0" />
+  <PropertyGroup>
+    <Name>CampusDataOps.Database</Name>
+    <ProjectGuid>{0F2E7B0C-3B8E-4F7E-A3A1-9D6B5C4E2A10}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql160DatabaseSchemaProvider</DSP>
+    <ModelCollation>1033, CI</ModelCollation>
+    <DefaultCollation>SQL_Latin1_General_CP1_CI_AS</DefaultCollation>
+    <TreatTSqlWarningsAsErrors>True</TreatTSqlWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Included into Post-Deployment.sql with :r, not compiled as model objects. -->
+    <Build Remove="reference/Seed/**" />
+    <None Include="reference/Seed/**" />
+    <!-- Operational scripts run with sqlcmd after deployment. -->
+    <Build Remove="Scripts/**" />
+    <None Include="Scripts/**" />
+    <Build Remove="Post-Deployment.sql" />
+    <PostDeploy Include="Post-Deployment.sql" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.sql text eol=lf
+*.sqlproj text eol=lf
+*.sln text eol=crlf
+*.dacpac binary
+*.png binary
