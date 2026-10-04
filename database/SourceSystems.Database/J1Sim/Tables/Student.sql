@@ -12,8 +12,11 @@ CREATE TABLE [J1Sim].[Student] (
     CONSTRAINT [FK_J1Sim_Student_Person] FOREIGN KEY ([IdNumber]) REFERENCES [J1Sim].[Person] ([IdNumber]),
     CONSTRAINT [FK_J1Sim_Student_AcademicProgram] FOREIGN KEY ([ProgramCode]) REFERENCES [J1Sim].[AcademicProgram] ([ProgramCode]),
     CONSTRAINT [FK_J1Sim_Student_EntryTerm] FOREIGN KEY ([EntryTermCode]) REFERENCES [J1Sim].[AcademicTerm] ([TermCode]),
-    CONSTRAINT [CK_J1Sim_Student_StudentStatus] CHECK (([StudentStatus] = 'ACTIVE' OR [StudentStatus] = 'INACTIVE' OR [StudentStatus] = 'GRADUATED' OR [StudentStatus] = 'WITHDRAWN')),
-    CONSTRAINT [CK_J1Sim_Student_ResidencyCode] CHECK (([ResidencyCode] = 'IN_STATE' OR [ResidencyCode] = 'OUT_OF_STATE' OR [ResidencyCode] = 'INTERNATIONAL'))
+    CONSTRAINT [CK_J1Sim_Student_StudentStatus]
+        CHECK (([StudentStatus] = 'ACTIVE' OR [StudentStatus] = 'INACTIVE' OR [StudentStatus] = 'GRADUATED'
+            OR [StudentStatus] = 'WITHDRAWN')),
+    CONSTRAINT [CK_J1Sim_Student_ResidencyCode]
+        CHECK (([ResidencyCode] = 'IN_STATE' OR [ResidencyCode] = 'OUT_OF_STATE' OR [ResidencyCode] = 'INTERNATIONAL'))
 );
 GO
 

@@ -7,6 +7,10 @@ The term calendar and program list must match pipelines/campus_ops/generators/ac
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
+-- Change detection uses WHERE EXISTS (SELECT s.cols EXCEPT SELECT t.cols): a NULL-safe
+-- comparison through correlated outer references, which SQLFluff RF01 cannot resolve.
+-- noqa: disable=RF01
+
 BEGIN TRANSACTION;
 
 DECLARE @NowUtc DATETIME2 (3) = SYSUTCDATETIME();
@@ -31,7 +35,7 @@ SET t.[SourceSystemName] = s.[SourceSystemName],
     t.[IsActive] = s.[IsActive],
     t.[UpdatedAtUtc] = @NowUtc
 FROM [reference].[SourceSystem] AS t
-INNER JOIN @SourceSystem AS s ON s.[SourceSystemCode] = t.[SourceSystemCode]
+INNER JOIN @SourceSystem AS s ON t.[SourceSystemCode] = s.[SourceSystemCode]
 WHERE EXISTS (
     SELECT s.[SourceSystemName], s.[Description], s.[IsActive]
     EXCEPT
@@ -63,8 +67,12 @@ SET t.[Description] = s.[Description],
     t.[IsTerminal] = s.[IsTerminal],
     t.[UpdatedAtUtc] = @NowUtc
 FROM [reference].[BatchStatus] AS t
-INNER JOIN @BatchStatus AS s ON s.[BatchStatusCode] = t.[BatchStatusCode]
-WHERE EXISTS (SELECT s.[Description], s.[IsTerminal] EXCEPT SELECT t.[Description], t.[IsTerminal]);
+INNER JOIN @BatchStatus AS s ON t.[BatchStatusCode] = s.[BatchStatusCode]
+WHERE EXISTS (
+    SELECT s.[Description], s.[IsTerminal]
+    EXCEPT
+    SELECT t.[Description], t.[IsTerminal]
+);
 
 INSERT INTO [reference].[BatchStatus] ([BatchStatusCode], [Description], [IsTerminal])
 SELECT s.[BatchStatusCode], s.[Description], s.[IsTerminal]
@@ -90,8 +98,12 @@ SET t.[Description] = s.[Description],
     t.[IsTerminal] = s.[IsTerminal],
     t.[UpdatedAtUtc] = @NowUtc
 FROM [reference].[BatchStepStatus] AS t
-INNER JOIN @BatchStepStatus AS s ON s.[BatchStepStatusCode] = t.[BatchStepStatusCode]
-WHERE EXISTS (SELECT s.[Description], s.[IsTerminal] EXCEPT SELECT t.[Description], t.[IsTerminal]);
+INNER JOIN @BatchStepStatus AS s ON t.[BatchStepStatusCode] = s.[BatchStepStatusCode]
+WHERE EXISTS (
+    SELECT s.[Description], s.[IsTerminal]
+    EXCEPT
+    SELECT t.[Description], t.[IsTerminal]
+);
 
 INSERT INTO [reference].[BatchStepStatus] ([BatchStepStatusCode], [Description], [IsTerminal])
 SELECT s.[BatchStepStatusCode], s.[Description], s.[IsTerminal]
@@ -136,7 +148,7 @@ SET t.[TermName] = s.[TermName],
     t.[IsOpenForAdmission] = s.[IsOpenForAdmission],
     t.[UpdatedAtUtc] = @NowUtc
 FROM [reference].[AcademicTerm] AS t
-INNER JOIN @AcademicTerm AS s ON s.[TermCode] = t.[TermCode]
+INNER JOIN @AcademicTerm AS s ON t.[TermCode] = s.[TermCode]
 WHERE EXISTS (
     SELECT s.[TermName], s.[TermType], s.[AcademicYear], s.[StartDate], s.[CensusDate], s.[EndDate], s.[IsOpenForAdmission]
     EXCEPT
@@ -184,7 +196,7 @@ SET t.[J1ProgramCode] = s.[J1ProgramCode],
     t.[EffectiveTo] = s.[EffectiveTo],
     t.[UpdatedAtUtc] = @NowUtc
 FROM [reference].[ProgramCrosswalk] AS t
-INNER JOIN @ProgramCrosswalk AS s ON s.[SlateProgramCode] = t.[SlateProgramCode]
+INNER JOIN @ProgramCrosswalk AS s ON t.[SlateProgramCode] = s.[SlateProgramCode]
 WHERE EXISTS (
     SELECT s.[J1ProgramCode], s.[ProgramName], s.[CredentialLevel], s.[CipCode], s.[IsActive], s.[EffectiveFrom], s.[EffectiveTo]
     EXCEPT
@@ -193,7 +205,9 @@ WHERE EXISTS (
 
 INSERT INTO [reference].[ProgramCrosswalk]
     ([SlateProgramCode], [J1ProgramCode], [ProgramName], [CredentialLevel], [CipCode], [IsActive], [EffectiveFrom], [EffectiveTo])
-SELECT s.[SlateProgramCode], s.[J1ProgramCode], s.[ProgramName], s.[CredentialLevel], s.[CipCode], s.[IsActive], s.[EffectiveFrom], s.[EffectiveTo]
+SELECT
+    s.[SlateProgramCode], s.[J1ProgramCode], s.[ProgramName], s.[CredentialLevel],
+    s.[CipCode], s.[IsActive], s.[EffectiveFrom], s.[EffectiveTo]
 FROM @ProgramCrosswalk AS s
 WHERE NOT EXISTS (SELECT 1 FROM [reference].[ProgramCrosswalk] AS t WHERE t.[SlateProgramCode] = s.[SlateProgramCode]);
 
@@ -211,36 +225,66 @@ DECLARE @ExceptionReason TABLE (
 INSERT INTO @ExceptionReason
     ([ExceptionReasonCode], [Description], [Category], [DefaultSeverity], [OwnerDepartment], [BlocksProcessing], [RemediationGuidance])
 VALUES
-    ('MISSING_REQUIRED_FIELD', N'Applicant is missing a required legal name, birth date, entry term or program.',
-        'VALIDATION', 'HIGH', N'Admissions', 1, N'Ask Admissions to complete the field in Slate-Sim; the record is retried on the next load.'),
-    ('INVALID_PROGRAM', N'Program code is not in the program crosswalk or maps to an inactive SIS program.',
-        'REFERENCE', 'HIGH', N'Admissions', 1, N'Correct the program choice in Slate-Sim, or have the Registrar update the crosswalk if the program is valid.'),
-    ('INVALID_ENTRY_TERM', N'Entry term is unknown to the SIS or is closed for admission.',
-        'REFERENCE', 'HIGH', N'Admissions', 1, N'Correct the entry term in Slate-Sim, or have the Registrar open the term if admission is intended.'),
-    ('DUPLICATE_APPLICATION', N'More than one active application exists for the same person and entry term.',
-        'VALIDATION', 'MEDIUM', N'Admissions', 1, N'Withdraw the superseded application in Slate-Sim.'),
-    ('DUPLICATE_SIS_PERSON', N'Two or more SIS person records appear to represent the same individual.',
-        'IDENTITY', 'HIGH', N'Registrar', 1, N'Registrar reviews the records and merges them in the SIS under the person-merge procedure.'),
-    ('AMBIGUOUS_MATCH', N'More than one SIS person satisfies the same deterministic match rule.',
-        'IDENTITY', 'HIGH', N'Registrar', 1, N'An authorized analyst selects the correct SIS person or confirms a new person; never auto-merged.'),
-    ('NO_MATCH', N'No SIS person satisfies any automatic match rule.',
-        'IDENTITY', 'MEDIUM', N'Admissions', 0, N'Eligible admitted applicants are created as new SIS people; otherwise review the applicant record.'),
-    ('IDENTITY_CONFLICT', N'Immutable identifiers disagree between systems, such as one SIS ID claimed by different people.',
-        'IDENTITY', 'HIGH', N'Registrar', 1, N'Registrar and Admissions establish the correct identifier before any retry.'),
-    ('INVALID_CONTACT_FORMAT', N'Email address or phone number is not in a valid format.',
-        'VALIDATION', 'LOW', N'Admissions', 0, N'Correct the contact value in Slate-Sim; processing continues without the invalid value.'),
-    ('ALREADY_MATRICULATED', N'Applicant is already an active matriculated student in the SIS.',
-        'PROCESSING', 'MEDIUM', N'Registrar', 1, N'Confirm whether this is a readmission or program change and route to the Registrar.'),
-    ('OUTBOUND_WRITE_FAILURE', N'Writing the applicant to the SIS failed.',
-        'PROCESSING', 'HIGH', N'Data Operations', 1, N'Review audit.ErrorLog for the batch, fix the cause and mark the exception RETRY_READY.'),
-    ('STATUS_MISMATCH', N'Application status and SIS student status are mutually inconsistent.',
-        'RECONCILIATION', 'MEDIUM', N'Registrar', 0, N'Confirm the authoritative status with Admissions and the Registrar and correct the source.'),
-    ('MISSING_DIRECTORY_ACCOUNT', N'An active student has no enabled directory account.',
-        'RECONCILIATION', 'MEDIUM', N'IT Identity Services', 0, N'IT Identity Services provisions the account from the SIS record.'),
-    ('ORPHAN_DIRECTORY_ACCOUNT', N'A student directory account does not correspond to any SIS person.',
-        'RECONCILIATION', 'MEDIUM', N'IT Identity Services', 0, N'IT Identity Services disables or relinks the account after review.'),
-    ('RECONCILIATION_COUNT_MISMATCH', N'Batch control totals do not reconcile between source, outcomes and target.',
-        'RECONCILIATION', 'HIGH', N'Data Operations', 1, N'Investigate the batch with the reconciliation runbook before the next scheduled load.');
+    ('MISSING_REQUIRED_FIELD',
+        N'Applicant is missing a required legal name, birth date, entry term or program.',
+        'VALIDATION', 'HIGH', N'Admissions', 1,
+        N'Ask Admissions to complete the field in Slate-Sim; the record is retried on the next load.'),
+    ('INVALID_PROGRAM',
+        N'Program code is not in the program crosswalk or maps to an inactive SIS program.',
+        'REFERENCE', 'HIGH', N'Admissions', 1,
+        N'Correct the program choice in Slate-Sim, or have the Registrar update the crosswalk if the program is valid.'),
+    ('INVALID_ENTRY_TERM',
+        N'Entry term is unknown to the SIS or is closed for admission.',
+        'REFERENCE', 'HIGH', N'Admissions', 1,
+        N'Correct the entry term in Slate-Sim, or have the Registrar open the term if admission is intended.'),
+    ('DUPLICATE_APPLICATION',
+        N'More than one active application exists for the same person and entry term.',
+        'VALIDATION', 'MEDIUM', N'Admissions', 1,
+        N'Withdraw the superseded application in Slate-Sim.'),
+    ('DUPLICATE_SIS_PERSON',
+        N'Two or more SIS person records appear to represent the same individual.',
+        'IDENTITY', 'HIGH', N'Registrar', 1,
+        N'Registrar reviews the records and merges them in the SIS under the person-merge procedure.'),
+    ('AMBIGUOUS_MATCH',
+        N'More than one SIS person satisfies the same deterministic match rule.',
+        'IDENTITY', 'HIGH', N'Registrar', 1,
+        N'An authorized analyst selects the correct SIS person or confirms a new person; never auto-merged.'),
+    ('NO_MATCH',
+        N'No SIS person satisfies any automatic match rule.',
+        'IDENTITY', 'MEDIUM', N'Admissions', 0,
+        N'Eligible admitted applicants are created as new SIS people; otherwise review the applicant record.'),
+    ('IDENTITY_CONFLICT',
+        N'Immutable identifiers disagree between systems, such as one SIS ID claimed by different people.',
+        'IDENTITY', 'HIGH', N'Registrar', 1,
+        N'Registrar and Admissions establish the correct identifier before any retry.'),
+    ('INVALID_CONTACT_FORMAT',
+        N'Email address or phone number is not in a valid format.',
+        'VALIDATION', 'LOW', N'Admissions', 0,
+        N'Correct the contact value in Slate-Sim; processing continues without the invalid value.'),
+    ('ALREADY_MATRICULATED',
+        N'Applicant is already an active matriculated student in the SIS.',
+        'PROCESSING', 'MEDIUM', N'Registrar', 1,
+        N'Confirm whether this is a readmission or program change and route to the Registrar.'),
+    ('OUTBOUND_WRITE_FAILURE',
+        N'Writing the applicant to the SIS failed.',
+        'PROCESSING', 'HIGH', N'Data Operations', 1,
+        N'Review audit.ErrorLog for the batch, fix the cause and mark the exception RETRY_READY.'),
+    ('STATUS_MISMATCH',
+        N'Application status and SIS student status are mutually inconsistent.',
+        'RECONCILIATION', 'MEDIUM', N'Registrar', 0,
+        N'Confirm the authoritative status with Admissions and the Registrar and correct the source.'),
+    ('MISSING_DIRECTORY_ACCOUNT',
+        N'An active student has no enabled directory account.',
+        'RECONCILIATION', 'MEDIUM', N'IT Identity Services', 0,
+        N'IT Identity Services provisions the account from the SIS record.'),
+    ('ORPHAN_DIRECTORY_ACCOUNT',
+        N'A student directory account does not correspond to any SIS person.',
+        'RECONCILIATION', 'MEDIUM', N'IT Identity Services', 0,
+        N'IT Identity Services disables or relinks the account after review.'),
+    ('RECONCILIATION_COUNT_MISMATCH',
+        N'Batch control totals do not reconcile between source, outcomes and target.',
+        'RECONCILIATION', 'HIGH', N'Data Operations', 1,
+        N'Investigate the batch with the reconciliation runbook before the next scheduled load.');
 
 UPDATE t
 SET t.[Description] = s.[Description],
@@ -252,19 +296,28 @@ SET t.[Description] = s.[Description],
     t.[IsActive] = 1,
     t.[UpdatedAtUtc] = @NowUtc
 FROM [reference].[ExceptionReason] AS t
-INNER JOIN @ExceptionReason AS s ON s.[ExceptionReasonCode] = t.[ExceptionReasonCode]
+INNER JOIN @ExceptionReason AS s ON t.[ExceptionReasonCode] = s.[ExceptionReasonCode]
 WHERE EXISTS (
-    SELECT s.[Description], s.[Category], s.[DefaultSeverity], s.[OwnerDepartment], s.[BlocksProcessing], s.[RemediationGuidance], CAST(1 AS BIT)
+    SELECT
+        s.[Description], s.[Category], s.[DefaultSeverity], s.[OwnerDepartment],
+        s.[BlocksProcessing], s.[RemediationGuidance], CAST(1 AS BIT) AS [IsActive]
     EXCEPT
-    SELECT t.[Description], t.[Category], t.[DefaultSeverity], t.[OwnerDepartment], t.[BlocksProcessing], t.[RemediationGuidance], t.[IsActive]
+    SELECT
+        t.[Description], t.[Category], t.[DefaultSeverity], t.[OwnerDepartment],
+        t.[BlocksProcessing], t.[RemediationGuidance], t.[IsActive]
 );
 
 INSERT INTO [reference].[ExceptionReason]
-    ([ExceptionReasonCode], [Description], [Category], [DefaultSeverity], [OwnerDepartment], [BlocksProcessing], [RemediationGuidance], [IsActive])
-SELECT s.[ExceptionReasonCode], s.[Description], s.[Category], s.[DefaultSeverity], s.[OwnerDepartment], s.[BlocksProcessing], s.[RemediationGuidance], 1
+    ([ExceptionReasonCode], [Description], [Category], [DefaultSeverity],
+     [OwnerDepartment], [BlocksProcessing], [RemediationGuidance], [IsActive])
+SELECT
+    s.[ExceptionReasonCode], s.[Description], s.[Category], s.[DefaultSeverity],
+    s.[OwnerDepartment], s.[BlocksProcessing], s.[RemediationGuidance], CAST(1 AS BIT) AS [IsActive]
 FROM @ExceptionReason AS s
 WHERE NOT EXISTS (
     SELECT 1 FROM [reference].[ExceptionReason] AS t WHERE t.[ExceptionReasonCode] = s.[ExceptionReasonCode]
 );
+
+-- noqa: enable=RF01
 
 COMMIT TRANSACTION;

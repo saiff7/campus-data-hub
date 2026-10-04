@@ -14,7 +14,8 @@ CREATE TABLE [DirectorySim].[DirectoryAccount] (
     CONSTRAINT [PK_DirectorySim_DirectoryAccount] PRIMARY KEY CLUSTERED ([AccountGuid] ASC),
     CONSTRAINT [UQ_DirectorySim_DirectoryAccount_SamAccountName] UNIQUE ([SamAccountName]),
     CONSTRAINT [UQ_DirectorySim_DirectoryAccount_UserPrincipalName] UNIQUE ([UserPrincipalName]),
-    CONSTRAINT [CK_DirectorySim_DirectoryAccount_AccountType] CHECK (([AccountType] = 'STUDENT' OR [AccountType] = 'STAFF' OR [AccountType] = 'SERVICE')),
+    CONSTRAINT [CK_DirectorySim_DirectoryAccount_AccountType]
+        CHECK (([AccountType] = 'STUDENT' OR [AccountType] = 'STAFF' OR [AccountType] = 'SERVICE')),
     CONSTRAINT [CK_DirectorySim_DirectoryAccount_UpdatedAfterCreated] CHECK ([UpdatedAtUtc] >= [CreatedAtUtc])
 );
 GO

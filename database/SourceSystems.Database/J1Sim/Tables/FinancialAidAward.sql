@@ -15,8 +15,10 @@ CREATE TABLE [J1Sim].[FinancialAidAward] (
     CONSTRAINT [FK_J1Sim_FinancialAidAward_AcademicTerm] FOREIGN KEY ([TermCode]) REFERENCES [J1Sim].[AcademicTerm] ([TermCode]),
     CONSTRAINT [UQ_J1Sim_FinancialAidAward_StudentTermFund] UNIQUE ([IdNumber], [TermCode], [FundCode]),
     CONSTRAINT [CK_J1Sim_FinancialAidAward_FundCode]
-        CHECK (([FundCode] = 'PELL' OR [FundCode] = 'SEOG' OR [FundCode] = 'MASSGRANT' OR [FundCode] = 'DIRECT_SUB' OR [FundCode] = 'DIRECT_UNSUB' OR [FundCode] = 'INST_SCHOL')),
-    CONSTRAINT [CK_J1Sim_FinancialAidAward_AwardStatus] CHECK (([AwardStatus] = 'OFFERED' OR [AwardStatus] = 'ACCEPTED' OR [AwardStatus] = 'DECLINED' OR [AwardStatus] = 'CANCELLED')),
+        CHECK (([FundCode] = 'PELL' OR [FundCode] = 'SEOG' OR [FundCode] = 'MASSGRANT' OR [FundCode] = 'DIRECT_SUB'
+            OR [FundCode] = 'DIRECT_UNSUB' OR [FundCode] = 'INST_SCHOL')),
+    CONSTRAINT [CK_J1Sim_FinancialAidAward_AwardStatus]
+        CHECK (([AwardStatus] = 'OFFERED' OR [AwardStatus] = 'ACCEPTED' OR [AwardStatus] = 'DECLINED' OR [AwardStatus] = 'CANCELLED')),
     CONSTRAINT [CK_J1Sim_FinancialAidAward_AmountOrder]
         CHECK ([OfferedAmount] > 0 AND [AcceptedAmount] >= 0 AND [DisbursedAmount] >= 0
             AND [AcceptedAmount] <= [OfferedAmount] AND [DisbursedAmount] <= [AcceptedAmount]),

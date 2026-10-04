@@ -15,7 +15,8 @@ CREATE TABLE [J1Sim].[StudentAccountTransaction] (
     CONSTRAINT [FK_J1Sim_StudentAccountTransaction_Student] FOREIGN KEY ([IdNumber]) REFERENCES [J1Sim].[Student] ([IdNumber]),
     CONSTRAINT [FK_J1Sim_StudentAccountTransaction_AcademicTerm] FOREIGN KEY ([TermCode]) REFERENCES [J1Sim].[AcademicTerm] ([TermCode]),
     CONSTRAINT [CK_J1Sim_StudentAccountTransaction_TransactionType]
-        CHECK (([TransactionType] = 'CHARGE' OR [TransactionType] = 'PAYMENT' OR [TransactionType] = 'AID_CREDIT' OR [TransactionType] = 'REFUND' OR [TransactionType] = 'ADJUSTMENT')),
+        CHECK (([TransactionType] = 'CHARGE' OR [TransactionType] = 'PAYMENT' OR [TransactionType] = 'AID_CREDIT'
+            OR [TransactionType] = 'REFUND' OR [TransactionType] = 'ADJUSTMENT')),
     CONSTRAINT [CK_J1Sim_StudentAccountTransaction_AmountSign]
         CHECK ((([TransactionType] = 'CHARGE' OR [TransactionType] = 'REFUND') AND [Amount] > 0)
             OR (([TransactionType] = 'PAYMENT' OR [TransactionType] = 'AID_CREDIT') AND [Amount] < 0)

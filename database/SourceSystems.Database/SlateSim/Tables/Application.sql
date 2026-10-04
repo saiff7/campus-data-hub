@@ -15,7 +15,9 @@ CREATE TABLE [SlateSim].[Application] (
     CONSTRAINT [CK_SlateSim_Application_StudentType]
         CHECK (([StudentType] = 'FIRST_TIME' OR [StudentType] = 'TRANSFER' OR [StudentType] = 'READMIT' OR [StudentType] = 'NON_DEGREE')),
     CONSTRAINT [CK_SlateSim_Application_CurrentStatus]
-        CHECK (([CurrentStatus] = 'STARTED' OR [CurrentStatus] = 'SUBMITTED' OR [CurrentStatus] = 'COMPLETE' OR [CurrentStatus] = 'ADMITTED' OR [CurrentStatus] = 'DENIED' OR [CurrentStatus] = 'WITHDRAWN' OR [CurrentStatus] = 'DEPOSITED')),
+        CHECK (([CurrentStatus] = 'STARTED' OR [CurrentStatus] = 'SUBMITTED' OR [CurrentStatus] = 'COMPLETE'
+            OR [CurrentStatus] = 'ADMITTED' OR [CurrentStatus] = 'DENIED' OR [CurrentStatus] = 'WITHDRAWN'
+            OR [CurrentStatus] = 'DEPOSITED')),
     CONSTRAINT [CK_SlateSim_Application_DecisionAfterSubmit]
         CHECK ([DecisionAtUtc] IS NULL OR ([SubmittedAtUtc] IS NOT NULL AND [DecisionAtUtc] >= [SubmittedAtUtc])),
     CONSTRAINT [CK_SlateSim_Application_UpdatedAfterCreated] CHECK ([UpdatedAtUtc] >= [CreatedAtUtc])

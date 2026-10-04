@@ -44,9 +44,10 @@ BEGIN
         -- 2601 comes from UX_audit_BatchRun_OneRunningPerProcess.
         IF ERROR_NUMBER() = 2601
         BEGIN
-            DECLARE @Message NVARCHAR (400) =
-                CONCAT(N'A RUNNING batch already exists for process ', @ProcessName,
-                       N'. Finish or fail it before starting another.');
+            DECLARE @Message NVARCHAR (400) = CONCAT(
+                N'A RUNNING batch already exists for process ', @ProcessName,
+                N'. Finish or fail it before starting another.'
+            );
             THROW 50003, @Message, 1;
         END;
 

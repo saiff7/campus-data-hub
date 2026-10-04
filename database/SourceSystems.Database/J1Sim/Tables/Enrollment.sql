@@ -11,7 +11,8 @@ CREATE TABLE [J1Sim].[Enrollment] (
     CONSTRAINT [FK_J1Sim_Enrollment_Student] FOREIGN KEY ([IdNumber]) REFERENCES [J1Sim].[Student] ([IdNumber]),
     CONSTRAINT [FK_J1Sim_Enrollment_CourseSection] FOREIGN KEY ([CourseSectionId]) REFERENCES [J1Sim].[CourseSection] ([CourseSectionId]),
     CONSTRAINT [UQ_J1Sim_Enrollment_StudentSection] UNIQUE ([IdNumber], [CourseSectionId]),
-    CONSTRAINT [CK_J1Sim_Enrollment_RegistrationStatus] CHECK (([RegistrationStatus] = 'REGISTERED' OR [RegistrationStatus] = 'DROPPED' OR [RegistrationStatus] = 'WITHDRAWN')),
+    CONSTRAINT [CK_J1Sim_Enrollment_RegistrationStatus]
+        CHECK (([RegistrationStatus] = 'REGISTERED' OR [RegistrationStatus] = 'DROPPED' OR [RegistrationStatus] = 'WITHDRAWN')),
     CONSTRAINT [CK_J1Sim_Enrollment_StatusAfterRegistration] CHECK ([StatusChangedAtUtc] >= [RegisteredAtUtc])
 );
 GO

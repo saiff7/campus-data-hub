@@ -11,6 +11,8 @@ CREATE TABLE [reference].[ExceptionReason] (
     [UpdatedAtUtc]        DATETIME2 (3)  CONSTRAINT [DF_reference_ExceptionReason_UpdatedAtUtc] DEFAULT (SYSUTCDATETIME()) NOT NULL,
     CONSTRAINT [PK_reference_ExceptionReason] PRIMARY KEY CLUSTERED ([ExceptionReasonCode] ASC),
     CONSTRAINT [CK_reference_ExceptionReason_Category]
-        CHECK (([Category] = 'IDENTITY' OR [Category] = 'VALIDATION' OR [Category] = 'REFERENCE' OR [Category] = 'PROCESSING' OR [Category] = 'RECONCILIATION')),
-    CONSTRAINT [CK_reference_ExceptionReason_DefaultSeverity] CHECK (([DefaultSeverity] = 'HIGH' OR [DefaultSeverity] = 'MEDIUM' OR [DefaultSeverity] = 'LOW'))
+        CHECK (([Category] = 'IDENTITY' OR [Category] = 'VALIDATION' OR [Category] = 'REFERENCE' OR [Category] = 'PROCESSING'
+            OR [Category] = 'RECONCILIATION')),
+    CONSTRAINT [CK_reference_ExceptionReason_DefaultSeverity]
+        CHECK (([DefaultSeverity] = 'HIGH' OR [DefaultSeverity] = 'MEDIUM' OR [DefaultSeverity] = 'LOW'))
 );

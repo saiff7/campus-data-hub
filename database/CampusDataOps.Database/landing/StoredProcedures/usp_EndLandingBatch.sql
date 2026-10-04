@@ -67,7 +67,7 @@ BEGIN
             @RowsRejected = @RowsRejected;
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT = 0 AND ERROR_PROCEDURE() = OBJECT_NAME(@@PROCID)
+        IF @@TRANCOUNT = 0 AND ERROR_PROCEDURE() = CONCAT(OBJECT_SCHEMA_NAME(@@PROCID), N'.', OBJECT_NAME(@@PROCID))
             EXEC [audit].[usp_LogError] @BatchId = @BatchId;
 
         THROW;
