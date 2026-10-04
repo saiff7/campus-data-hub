@@ -18,6 +18,14 @@ SEED ?= 20260901
 SCALE ?= 1.0
 HEALTH_TIMEOUT_SECONDS ?= 240
 
+# ODBC Driver 18 on macOS loads OpenSSL from Homebrew's unversioned "openssl" alias. When that
+# alias points at OpenSSL 4 (unsupported by the driver), prefer the keg-only openssl@3 libraries.
+ifeq ($(shell uname -s),Darwin)
+OPENSSL3_LIB ?= $(shell brew --prefix openssl@3 2> /dev/null)/lib
+ODBC_ENV := $(if $(wildcard $(OPENSSL3_LIB)/libssl.3.dylib),DYLD_LIBRARY_PATH="$(OPENSSL3_LIB)",)
+endif
+PY_RUN = $(ODBC_ENV) $(UV) run
+
 SOURCE_DACPAC := database/SourceSystems.Database/bin/$(CONFIGURATION)/SourceSystems.Database.dacpac
 OPS_DACPAC := database/CampusDataOps.Database/bin/$(CONFIGURATION)/CampusDataOps.Database.dacpac
 
@@ -80,7 +88,7 @@ deploy: build ## Publish both DACPACs to the local SQL Server
 
 .PHONY: seed
 seed: ## Replace simulator source data with the deterministic synthetic dataset
-	$(UV) run campus-ops load-sources --seed $(SEED) --scale $(SCALE)
+	$(PY_RUN) campus-ops load-sources --seed $(SEED) --scale $(SCALE)
 
 .PHONY: smoke
 smoke: ## Run the post-deployment smoke test
@@ -96,7 +104,7 @@ test: ## Run Python tests that need no database
 
 .PHONY: test-db
 test-db: ## Run Python tests against the deployed local database
-	CAMPUS_RUN_DB_TESTS=1 $(UV) run pytest -m db
+	CAMPUS_RUN_DB_TESTS=1 $(PY_RUN) pytest -m db
 
 .PHONY: lint
 lint: ## Lint Python and SQL
