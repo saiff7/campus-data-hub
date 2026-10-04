@@ -24,7 +24,9 @@ ifeq ($(shell uname -s),Darwin)
 OPENSSL3_LIB ?= $(shell brew --prefix openssl@3 2> /dev/null)/lib
 ODBC_ENV := $(if $(wildcard $(OPENSSL3_LIB)/libssl.3.dylib),DYLD_LIBRARY_PATH="$(OPENSSL3_LIB)",)
 endif
-PY_RUN = $(ODBC_ENV) $(UV) run
+# Run modules with `python -m`: console-script launchers in long or spaced paths become
+# /bin/sh trampolines, and macOS strips DYLD_* variables when executing /bin/sh.
+PY_RUN = $(ODBC_ENV) $(UV) run python -m
 
 SOURCE_DACPAC := database/SourceSystems.Database/bin/$(CONFIGURATION)/SourceSystems.Database.dacpac
 OPS_DACPAC := database/CampusDataOps.Database/bin/$(CONFIGURATION)/CampusDataOps.Database.dacpac
@@ -88,7 +90,7 @@ deploy: build ## Publish both DACPACs to the local SQL Server
 
 .PHONY: seed
 seed: ## Replace simulator source data with the deterministic synthetic dataset
-	$(PY_RUN) campus-ops load-sources --seed $(SEED) --scale $(SCALE)
+	$(PY_RUN) campus_ops.cli load-sources --seed $(SEED) --scale $(SCALE)
 
 .PHONY: smoke
 smoke: ## Run the post-deployment smoke test
