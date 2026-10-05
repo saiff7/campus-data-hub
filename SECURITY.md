@@ -22,8 +22,18 @@
 
 ## Known limitations of the local environment
 
-- Part 1 deploys and seeds as `sa` against a local container. Least-privilege database roles,
-  curated views and access auditing are introduced in Part 3.
+- Parts 1 and 2 deploy, seed and run the pipeline as `sa` against a local container. The
+  pipeline writes to J1-Sim across databases, which needs only `EXECUTE` on
+  `J1Sim.usp_ReceiveAdmittedApplicant` for the integration service; least-privilege database
+  roles, curated views and access auditing are introduced in Part 3.
+- Exception worklists, data-quality results and match evidence store identifiers and codes, not
+  names, birth dates or contact values. Error messages raised by the procedures name identifiers
+  only; engine messages in `audit.ErrorLog` can quote values, so that table is restricted with
+  the other operational tables in Part 3.
+- `Scripts/reset_operational_data.sql` deletes all operational history and exists for development
+  and tests only. It is not part of the DACPAC and refuses to run without explicit confirmation.
+- tSQLt is installed only into development and CI databases. Its installation enables CLR on the
+  local container (`PrepareServer.sql`); the download is verified against a pinned SHA-256.
 - `CAMPUS_DB_TRUST_SERVER_CERTIFICATE=true` is for the container's self-signed certificate only.
   Connections always request encryption.
 - The project demonstrates controls informed by FERPA and GLBA obligations. It does not claim
