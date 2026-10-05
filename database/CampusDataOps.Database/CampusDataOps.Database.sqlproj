@@ -13,10 +13,26 @@
     <!-- Included into Post-Deployment.sql with :r, not compiled as model objects. -->
     <Build Remove="reference/Seed/**" />
     <None Include="reference/Seed/**" />
+    <Build Remove="dq/Seed/**" />
+    <None Include="dq/Seed/**" />
     <!-- Operational scripts run with sqlcmd after deployment. -->
     <Build Remove="Scripts/**" />
     <None Include="Scripts/**" />
     <Build Remove="Post-Deployment.sql" />
     <PostDeploy Include="Post-Deployment.sql" />
+  </ItemGroup>
+  <!-- Source simulators live in a separate database. Every cross-database reference uses
+       [$(SourceSystems)] and is confined to landing.vw_Source* views, integration.vw_J1*
+       views and the outbound adapter, so tests can replace them. -->
+  <ItemGroup>
+    <ProjectReference Include="../SourceSystems.Database/SourceSystems.Database.sqlproj">
+      <DatabaseSqlCmdVariable>SourceSystems</DatabaseSqlCmdVariable>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <SqlCmdVariable Include="SourceSystems">
+      <DefaultValue>SourceSystems</DefaultValue>
+      <Value>$(SqlCmdVar__1)</Value>
+    </SqlCmdVariable>
   </ItemGroup>
 </Project>

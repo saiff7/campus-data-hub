@@ -1,9 +1,13 @@
 -- One row per execution of a process (a source landing load or a scheduled job).
 -- Watermarks advance only on SUCCEEDED landing batches; the landing procedures enforce it.
+-- ParentBatchId links a landing batch to the pipeline run that requested it;
+-- RecoveryOfBatchId links a recovery run to the FAILED run it resumes.
 CREATE TABLE [audit].[BatchRun] (
     [BatchId]              BIGINT         IDENTITY (1, 1) NOT NULL,
     [ProcessName]          VARCHAR (100)  NOT NULL,
     [SourceSystemCode]     VARCHAR (20)   NULL,
+    [ParentBatchId]        BIGINT         NULL,
+    [RecoveryOfBatchId]    BIGINT         NULL,
     [BatchStatusCode]      VARCHAR (20)   NOT NULL,
     [RequestedAtUtc]       DATETIME2 (3)  NOT NULL,
     [StartedAtUtc]         DATETIME2 (3)  NOT NULL,
@@ -22,6 +26,10 @@ CREATE TABLE [audit].[BatchRun] (
     CONSTRAINT [PK_audit_BatchRun] PRIMARY KEY CLUSTERED ([BatchId] ASC),
     CONSTRAINT [FK_audit_BatchRun_SourceSystem]
         FOREIGN KEY ([SourceSystemCode]) REFERENCES [reference].[SourceSystem] ([SourceSystemCode]),
+    CONSTRAINT [FK_audit_BatchRun_ParentBatch] FOREIGN KEY ([ParentBatchId]) REFERENCES [audit].[BatchRun] ([BatchId]),
+    CONSTRAINT [FK_audit_BatchRun_RecoveryOfBatch] FOREIGN KEY ([RecoveryOfBatchId]) REFERENCES [audit].[BatchRun] ([BatchId]),
+    CONSTRAINT [CK_audit_BatchRun_NotOwnParent] CHECK ([ParentBatchId] IS NULL OR [ParentBatchId] <> [BatchId]),
+    CONSTRAINT [CK_audit_BatchRun_NotOwnRecovery] CHECK ([RecoveryOfBatchId] IS NULL OR [RecoveryOfBatchId] <> [BatchId]),
     CONSTRAINT [FK_audit_BatchRun_BatchStatus]
         FOREIGN KEY ([BatchStatusCode]) REFERENCES [reference].[BatchStatus] ([BatchStatusCode]),
     CONSTRAINT [CK_audit_BatchRun_StartAfterRequest] CHECK ([StartedAtUtc] >= [RequestedAtUtc]),
@@ -46,3 +54,14 @@ GO
 CREATE NONCLUSTERED INDEX [IX_audit_BatchRun_ProcessStatus]
     ON [audit].[BatchRun] ([ProcessName] ASC, [BatchStatusCode] ASC, [BatchId] DESC)
     INCLUDE ([SourceWatermarkUtc], [EndedAtUtc]);
+GO
+
+-- A failed run can be recovered at most once; a second recovery must resume the first.
+CREATE UNIQUE NONCLUSTERED INDEX [UX_audit_BatchRun_RecoveryOfBatchId]
+    ON [audit].[BatchRun] ([RecoveryOfBatchId] ASC)
+    WHERE ([RecoveryOfBatchId] IS NOT NULL);
+GO
+
+CREATE NONCLUSTERED INDEX [IX_audit_BatchRun_ParentBatchId]
+    ON [audit].[BatchRun] ([ParentBatchId] ASC)
+    WHERE ([ParentBatchId] IS NOT NULL);

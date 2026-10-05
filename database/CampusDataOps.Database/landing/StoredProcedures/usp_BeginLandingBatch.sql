@@ -5,7 +5,8 @@ CREATE PROCEDURE [landing].[usp_BeginLandingBatch]
     @SourceSystemCode     VARCHAR (20),
     @RequestedAtUtc       DATETIME2 (3) = NULL,
     @BatchId              BIGINT        OUTPUT,
-    @PreviousWatermarkUtc DATETIME2 (3) OUTPUT
+    @PreviousWatermarkUtc DATETIME2 (3) OUTPUT,
+    @ParentBatchId        BIGINT        = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -36,7 +37,8 @@ BEGIN
             @SourceSystemCode = @SourceSystemCode,
             @PreviousWatermarkUtc = @PreviousWatermarkUtc,
             @RequestedAtUtc = @RequestedAtUtc,
-            @BatchId = @BatchId OUTPUT;
+            @BatchId = @BatchId OUTPUT,
+            @ParentBatchId = @ParentBatchId;
     END TRY
     BEGIN CATCH
         -- usp_LogBatchStart logs its own failures; only log errors raised here.

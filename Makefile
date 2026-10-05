@@ -80,12 +80,14 @@ build: ## Build both SQL projects into DACPACs
 deploy: build ## Publish both DACPACs to the local SQL Server
 	@for pair in "$(SOURCE_DACPAC):SourceSystems" "$(OPS_DACPAC):CampusDataOps"; do \
 		dacpac="$${pair%%:*}"; database="$${pair##*:}"; \
+		variables=""; \
+		if [[ "$$database" == "CampusDataOps" ]]; then variables="/v:SourceSystems=SourceSystems"; fi; \
 		echo "Publishing $$database"; \
 		$(SQLPACKAGE) /Action:Publish /Quiet:True \
 			/SourceFile:"$$dacpac" \
 			/TargetServerName:"$(SQL_SERVER)" /TargetDatabaseName:"$$database" \
 			/TargetUser:sa /TargetPassword:"$$MSSQL_SA_PASSWORD" /TargetTrustServerCertificate:True \
-			/p:BlockOnPossibleDataLoss=True; \
+			/p:BlockOnPossibleDataLoss=True $$variables; \
 	done
 
 .PHONY: seed
