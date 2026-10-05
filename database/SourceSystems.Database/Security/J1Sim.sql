@@ -1,0 +1,2 @@
+CREATE SCHEMA [J1Sim]
+    AUTHORIZATION [dbo];

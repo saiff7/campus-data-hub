@@ -1,0 +1,2 @@
+CREATE SCHEMA [compliance]
+    AUTHORIZATION [dbo];

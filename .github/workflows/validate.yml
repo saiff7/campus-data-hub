@@ -1,0 +1,100 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Lint and unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run sqlfluff lint database
+      - run: uv run pytest -m "not db"
+
+  secrets:
+    name: Secret scan (full history)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2 git /repo --redact --verbose
+
+  build:
+    name: Build DACPACs
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - run: dotnet build campus-data-hub.sln -c Release -nologo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dacpacs
+          path: database/*/bin/Release/*.dacpac
+          if-no-files-found: error
+
+  integration:
+    name: Bootstrap on a disposable SQL Server
+    needs: [python, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install SqlPackage
+        run: |
+          dotnet tool install --global microsoft.sqlpackage
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+      - name: Install ODBC Driver 18 and sqlcmd
+        run: |
+          if ! odbcinst -q -d | grep -q "ODBC Driver 18 for SQL Server" || [ ! -x /opt/mssql-tools18/bin/sqlcmd ]; then
+            curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg --yes
+            curl -fsSL "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list" | sudo tee /etc/apt/sources.list.d/mssql-release.list
+            sudo apt-get update
+            sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18 mssql-tools18 unixodbc-dev
+          fi
+          echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
+      - name: Create a throwaway .env
+        run: |
+          password="Ci-$(openssl rand -hex 16)-Aa1!"
+          echo "::add-mask::$password"
+          cp .env.example .env
+          sed -i "s/^MSSQL_SA_PASSWORD=.*/MSSQL_SA_PASSWORD=${password}/" .env
+      - run: uv sync --locked
+      - name: make bootstrap
+        run: make bootstrap CONFIGURATION=Release
+      - name: Rerun bootstrap to prove idempotency
+        run: make bootstrap CONFIGURATION=Release
+      - name: Database tests
+        run: make test-db
+      - name: SQL Server logs on failure
+        if: failure()
+        run: docker compose logs sqlserver --tail 200
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
