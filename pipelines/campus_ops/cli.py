@@ -1,6 +1,7 @@
 """Command-line entry point: `campus-ops <command>`."""
 
 import argparse
+import dataclasses
 import json
 import logging
 import sys
@@ -11,6 +12,14 @@ from campus_ops.db import connect
 from campus_ops.generators.dataset import generate_sources
 from campus_ops.generators.edge_cases import EDGE_CASES
 from campus_ops.logging_config import configure_logging
+from campus_ops.pipeline import (
+    STEPS,
+    PipelineError,
+    recover,
+    reset_operational_data,
+    run_nightly,
+    run_summary,
+)
 from campus_ops.source_writer import replace_source_data
 
 log = logging.getLogger("campus_ops.cli")
@@ -41,13 +50,59 @@ def _parser() -> argparse.ArgumentParser:
     )
     add_generation_options(load)
     commands.add_parser("edge-cases", help="list the deliberate edge cases and their identifiers")
+    commands.add_parser("nightly", help="run the nightly integration pipeline end to end")
+    recovery = commands.add_parser(
+        "recover", help="open a recovery run for a failed run and resume at a step"
+    )
+    recovery.add_argument("--failed-batch", type=int, required=True, help="the FAILED run's id")
+    recovery.add_argument("--at", choices=STEPS, required=True, help="step to resume at")
+    summary_of = commands.add_parser("run-summary", help="print a run's status and reconciliation")
+    summary_of.add_argument("--batch", type=int, required=True)
+    reset = commands.add_parser(
+        "reset-ops", help="DEVELOPMENT ONLY: delete all CampusDataOps operational data"
+    )
+    reset.add_argument("--confirm", action="store_true", help="required; confirms the deletion")
     return parser
+
+
+def _pipeline_command(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    with connect(settings, settings.ops_database, autocommit=True) as connection:
+        if args.command == "reset-ops":
+            if not args.confirm:
+                print("reset-ops deletes all operational data; add --confirm", file=sys.stderr)
+                return 2
+            reset_operational_data(connection)
+            log.info("operational data deleted")
+            return 0
+        if args.command == "run-summary":
+            batch_id = args.batch
+        else:
+            try:
+                batch_id = (
+                    run_nightly(connection)
+                    if args.command == "nightly"
+                    else recover(connection, args.failed_batch, args.at)
+                )
+            except PipelineError as error:
+                print(
+                    json.dumps(
+                        dataclasses.asdict(run_summary(connection, error.batch_id)), indent=2
+                    )
+                )
+                print(f"{error}; see audit.ErrorLog for batch {error.batch_id}", file=sys.stderr)
+                return 1
+        print(json.dumps(dataclasses.asdict(run_summary(connection, batch_id)), indent=2))
+    return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     settings = get_settings()
     configure_logging(settings.log_level)
     args = _parser().parse_args(argv)
+
+    if args.command in {"nightly", "recover", "run-summary", "reset-ops"}:
+        return _pipeline_command(args)
 
     if args.command == "edge-cases":
         print(

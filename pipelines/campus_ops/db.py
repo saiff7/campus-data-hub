@@ -36,11 +36,14 @@ def connection_string(settings: Settings, database: str) -> str:
 
 
 @contextmanager
-def connect(settings: Settings, database: str) -> Iterator[pyodbc.Connection]:
-    """Open a connection with autocommit off; the caller commits explicitly."""
+def connect(
+    settings: Settings, database: str, *, autocommit: bool = False
+) -> Iterator[pyodbc.Connection]:
+    """Open a connection. Autocommit is off unless requested: callers that only invoke stored
+    procedures which manage their own transactions (the pipeline) pass autocommit=True."""
     connection = pyodbc.connect(
         connection_string(settings, database),
-        autocommit=False,
+        autocommit=autocommit,
         timeout=settings.db_login_timeout_seconds,
     )
     try:

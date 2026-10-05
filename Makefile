@@ -107,6 +107,24 @@ seed: ## Replace simulator source data with the deterministic synthetic dataset
 smoke: ## Run the post-deployment smoke test
 	$(SQLCMD_RUN) -d CampusDataOps -i database/CampusDataOps.Database/Scripts/smoke_test.sql
 
+.PHONY: nightly
+nightly: ## Run the nightly integration pipeline once (same procedures as the Agent job)
+	$(PY_RUN) campus_ops.cli nightly
+
+.PHONY: recover
+recover: ## Resume a failed run: make recover FAILED_BATCH=<id> AT=<STEP>
+	@test -n "$(FAILED_BATCH)" -a -n "$(AT)" || { echo "Usage: make recover FAILED_BATCH=<batch id> AT=<step code>"; exit 1; }
+	$(PY_RUN) campus_ops.cli recover --failed-batch $(FAILED_BATCH) --at $(AT)
+
+.PHONY: agent-install
+agent-install: ## Create or replace the SQL Server Agent nightly integration job
+	$(SQLCMD_RUN) -d msdb -i automation/sql-agent/01_create_nightly_integration_job.sql
+
+.PHONY: reset-ops
+reset-ops: ## DEVELOPMENT ONLY: delete all CampusDataOps operational data (requires CONFIRM=1)
+	@test "$(CONFIRM)" = "1" || { echo "This deletes all landing, staging, integration, quality and audit rows. Re-run with CONFIRM=1"; exit 1; }
+	$(SQLCMD_RUN) -d CampusDataOps -v ConfirmReset=YES -i database/CampusDataOps.Database/Scripts/reset_operational_data.sql
+
 .PHONY: bootstrap
 bootstrap: check-tools up deploy seed smoke ## One command: start, build, deploy, seed and smoke test (rerunnable)
 	@echo "Bootstrap complete"
@@ -149,7 +167,7 @@ test-sql: tsqlt-install ## Run the tSQLt database unit tests (writes out/tsqlt-r
 lint: ## Lint Python and SQL
 	$(UV) run ruff check .
 	$(UV) run ruff format --check .
-	$(UV) run sqlfluff lint database
+	$(UV) run sqlfluff lint database automation
 
 .PHONY: fmt
 fmt: ## Format Python
