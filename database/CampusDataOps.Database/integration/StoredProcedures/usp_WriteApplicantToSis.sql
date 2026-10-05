@@ -38,7 +38,9 @@ BEGIN
         @LastName = q.[LastName],
         @BirthDate = q.[BirthDate],
         @Email = q.[Email],
-        @Phone = CASE WHEN q.[Phone] IS NOT NULL THEN CONCAT(LEFT(q.[Phone], 3), '-', SUBSTRING(q.[Phone], 4, 3), '-', RIGHT(q.[Phone], 4)) END,
+        @Phone = CASE
+            WHEN q.[Phone] IS NOT NULL THEN CONCAT(LEFT(q.[Phone], 3), '-', SUBSTRING(q.[Phone], 4, 3), '-', RIGHT(q.[Phone], 4))
+        END,
         @AddressLine1 = q.[AddressLine1],
         @City = q.[City],
         @StateCode = q.[StateCode],

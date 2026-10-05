@@ -13,7 +13,10 @@ CREATE TABLE [integration].[ReconciliationResult] (
     [Processed]           AS ([Matched] + [Created]) PERSISTED,
     [TargetConfirmed]     INT           NOT NULL,
     [EntityMismatchCount] INT           NOT NULL,
-    [IsBalanced]          AS (CONVERT(BIT, CASE WHEN [TargetConfirmed] = [Matched] + [Created] AND [EntityMismatchCount] = 0 THEN 1 ELSE 0 END)) PERSISTED,
+    [IsBalanced]          AS (CONVERT(BIT, CASE
+                              WHEN [TargetConfirmed] = [Matched] + [Created] AND [EntityMismatchCount] = 0 THEN 1
+                              ELSE 0
+                          END)) PERSISTED,
     [CreatedAtUtc]        DATETIME2 (3) CONSTRAINT [DF_integration_ReconciliationResult_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()) NOT NULL,
     CONSTRAINT [PK_integration_ReconciliationResult] PRIMARY KEY CLUSTERED ([BatchId] ASC),
     CONSTRAINT [FK_integration_ReconciliationResult_Batch] FOREIGN KEY ([BatchId]) REFERENCES [audit].[BatchRun] ([BatchId]),

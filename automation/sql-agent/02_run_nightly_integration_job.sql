@@ -45,9 +45,9 @@ INNER JOIN [dbo].[sysjobs] AS j ON h.[job_id] = j.[job_id]
 WHERE j.[name] = @JobName
   AND h.[instance_id] <= @HistoryId
   AND h.[instance_id] > ISNULL((
-      SELECT MAX(prior.[instance_id])
-      FROM [dbo].[sysjobhistory] AS prior
-      WHERE prior.[job_id] = h.[job_id] AND prior.[step_id] = 0 AND prior.[instance_id] < @HistoryId
+      SELECT MAX(earlier_run.[instance_id])
+      FROM [dbo].[sysjobhistory] AS earlier_run
+      WHERE earlier_run.[job_id] = h.[job_id] AND earlier_run.[step_id] = 0 AND earlier_run.[instance_id] < @HistoryId
   ), 0)
 ORDER BY h.[instance_id];
 

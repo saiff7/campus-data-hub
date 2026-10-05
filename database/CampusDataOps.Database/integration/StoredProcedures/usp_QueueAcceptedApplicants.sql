@@ -46,10 +46,6 @@ BEGIN
             d.[MatchDecisionId],
             act.[ActionCode],
             d.[MatchedIdNumber] AS [TargetIdNumber],
-            HASHBYTES('SHA2_256', CONCAT(
-                'SLATE_SIM|', LOWER(CAST(a.[ApplicationId] AS VARCHAR (36))), '|', act.[ActionCode], '|',
-                CAST(d.[MatchedIdNumber] AS VARCHAR (12))
-            )) AS [IdempotencyKey],
             a.[FirstNameRaw],
             a.[MiddleNameRaw],
             a.[LastNameRaw],
@@ -62,7 +58,11 @@ BEGIN
             a.[PostalCodeRaw],
             a.[J1ProgramCode],
             a.[EntryTermCode],
-            a.[ResidencyCode]
+            a.[ResidencyCode],
+            HASHBYTES('SHA2_256', CONCAT(
+                'SLATE_SIM|', LOWER(CAST(a.[ApplicationId] AS VARCHAR (36))), '|', act.[ActionCode], '|',
+                CAST(d.[MatchedIdNumber] AS VARCHAR (12))
+            )) AS [IdempotencyKey]
         INTO #Ready
         FROM [staging].[Applicant] AS a
         INNER JOIN [integration].[MatchDecision] AS d
@@ -72,7 +72,8 @@ BEGIN
             ON d.[DecisionTypeCode] = dt.[DecisionTypeCode]
            AND dt.[AllowsProcessing] = 1
         LEFT JOIN [staging].[Person] AS p ON d.[MatchedIdNumber] = p.[IdNumber]
-        CROSS APPLY (
+        -- The action is derived once per row and used in the key, the select list and the filter.
+        CROSS APPLY ( -- noqa: ST05
             SELECT CASE
                 WHEN d.[MatchedIdNumber] IS NULL THEN 'CREATE_PERSON_STUDENT'
                 WHEN p.[HasStudentRecord] = 0 THEN 'CREATE_STUDENT'

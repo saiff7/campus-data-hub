@@ -33,7 +33,9 @@ BEGIN
     SELECT rr.[RecordKey], rr.[DetailCode] INTO #Actual FROM [dq].[RuleResult] AS rr WHERE rr.[RuleCode] = @RuleCode;
     SELECT TOP (0) a.[RecordKey], a.[DetailCode] INTO #Expected FROM #Actual AS a;
     INSERT INTO #Expected ([RecordKey], [DetailCode])
-    SELECT LEFT(v.[value], CHARINDEX(':', v.[value]) - 1), SUBSTRING(v.[value], CHARINDEX(':', v.[value]) + 1, 200)
+    SELECT
+        LEFT(v.[value], CHARINDEX(':', v.[value]) - 1) AS [RecordKey],
+        SUBSTRING(v.[value], CHARINDEX(':', v.[value]) + 1, 200) AS [DetailCode]
     FROM STRING_SPLIT(@Expected, ';') AS v
     WHERE v.[value] <> '';
 
@@ -61,7 +63,8 @@ BEGIN
 
     EXEC [DataQualityTests].[AssertFailures] @RuleCode = 'APP_REQUIRED_FIELDS', @Expected = N'B0000000-0000-4000-8000-000000000002:PROGRAM';
     EXEC [DataQualityTests].[AssertFailures] @RuleCode = 'APP_TERM_VALID', @Expected = N'B0000000-0000-4000-8000-000000000002:UNKNOWN_TERM';
-    EXEC [DataQualityTests].[AssertFailures] @RuleCode = 'APP_EMAIL_FORMAT', @Expected = N'B0000000-0000-4000-8000-000000000002:INVALID_EMAIL';
+    EXEC [DataQualityTests].[AssertFailures]
+        @RuleCode = 'APP_EMAIL_FORMAT', @Expected = N'B0000000-0000-4000-8000-000000000002:INVALID_EMAIL';
     EXEC [DataQualityTests].[AssertFailures]
         @RuleCode = 'APP_DUPLICATE_APPLICATION', @Expected = N'B0000000-0000-4000-8000-000000000002:GROUP_SIZE:2';
     EXEC [DataQualityTests].[AssertFailures] @RuleCode = 'APP_PROGRAM_VALID', @Expected = N'';

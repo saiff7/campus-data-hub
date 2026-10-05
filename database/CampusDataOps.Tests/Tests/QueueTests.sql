@@ -40,7 +40,9 @@ BEGIN
 
     EXEC [integration].[usp_RunQueueStep] @BatchId = 100;
 
-    SELECT q.[ApplicationId], q.[ActionCode], q.[TargetIdNumber], q.[QueueStatusCode] INTO #Actual FROM [integration].[OutboundStudentQueue] AS q;
+    SELECT q.[ApplicationId], q.[ActionCode], q.[TargetIdNumber], q.[QueueStatusCode]
+    INTO #Actual
+    FROM [integration].[OutboundStudentQueue] AS q;
     SELECT TOP (0) a.[ApplicationId], a.[ActionCode], a.[TargetIdNumber], a.[QueueStatusCode] INTO #Expected FROM #Actual AS a;
     INSERT INTO #Expected ([ApplicationId], [ActionCode], [TargetIdNumber], [QueueStatusCode])
     VALUES
@@ -222,7 +224,8 @@ BEGIN
     DECLARE @Status VARCHAR (20) = (SELECT q.[QueueStatusCode] FROM [integration].[OutboundStudentQueue] AS q);
     SELECT e.[ExceptionReasonCode], e.[ExceptionStatusCode], e.[DetailCode] INTO #Actual FROM [integration].[IntegrationException] AS e;
     SELECT TOP (0) a.[ExceptionReasonCode], a.[ExceptionStatusCode], a.[DetailCode] INTO #Expected FROM #Actual AS a;
-    INSERT INTO #Expected ([ExceptionReasonCode], [ExceptionStatusCode], [DetailCode]) VALUES ('OUTBOUND_WRITE_FAILURE', 'OPEN', 'ERROR:51001');
+    INSERT INTO #Expected ([ExceptionReasonCode], [ExceptionStatusCode], [DetailCode])
+    VALUES ('OUTBOUND_WRITE_FAILURE', 'OPEN', 'ERROR:51001');
 
     EXEC tSQLt.AssertEquals @Expected = 'FAILED_PERMANENT', @Actual = @Status;
     EXEC tSQLt.AssertEqualsTable @Expected = N'#Expected', @Actual = N'#Actual';

@@ -19,8 +19,10 @@ CREATE TABLE [integration].[IntegrationException] (
     [FirstSeenBatchId]    BIGINT           NOT NULL,
     [LastSeenBatchId]     BIGINT           NOT NULL,
     [OccurrenceCount]     INT              NOT NULL,
-    [CreatedAtUtc]        DATETIME2 (3)    CONSTRAINT [DF_integration_IntegrationException_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()) NOT NULL,
-    [UpdatedAtUtc]        DATETIME2 (3)    CONSTRAINT [DF_integration_IntegrationException_UpdatedAtUtc] DEFAULT (SYSUTCDATETIME()) NOT NULL,
+    [CreatedAtUtc]        DATETIME2 (3)    NOT NULL
+        CONSTRAINT [DF_integration_IntegrationException_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [UpdatedAtUtc]        DATETIME2 (3)    NOT NULL
+        CONSTRAINT [DF_integration_IntegrationException_UpdatedAtUtc] DEFAULT (SYSUTCDATETIME()),
     [RowVersion]          ROWVERSION       NOT NULL,
     CONSTRAINT [PK_integration_IntegrationException] PRIMARY KEY CLUSTERED ([ExceptionId] ASC),
     CONSTRAINT [FK_integration_IntegrationException_Reason]

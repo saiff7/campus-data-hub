@@ -12,7 +12,8 @@ environment.
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-IF N'$(ConfirmReset)' <> N'YES'
+-- sqlcmd substitutes $(ConfirmReset) before execution, so this is not a constant comparison.
+IF N'$(ConfirmReset)' <> N'YES' -- noqa: ST10
     THROW 50900, N'Refusing to delete operational data without ConfirmReset=YES.', 1;
 
 BEGIN TRANSACTION;

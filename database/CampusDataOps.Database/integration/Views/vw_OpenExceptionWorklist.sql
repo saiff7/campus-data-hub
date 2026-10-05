@@ -22,8 +22,8 @@ SELECT
     e.[FirstSeenBatchId],
     e.[LastSeenBatchId],
     e.[CreatedAtUtc],
-    DATEDIFF(DAY, e.[CreatedAtUtc], SYSUTCDATETIME()) AS [AgeDays],
-    r.[RemediationGuidance]
+    r.[RemediationGuidance],
+    DATEDIFF(DAY, e.[CreatedAtUtc], SYSUTCDATETIME()) AS [AgeDays]
 FROM [integration].[IntegrationException] AS e
 INNER JOIN [reference].[ExceptionReason] AS r ON e.[ExceptionReasonCode] = r.[ExceptionReasonCode]
 INNER JOIN [reference].[ExceptionStatus] AS s ON e.[ExceptionStatusCode] = s.[ExceptionStatusCode]

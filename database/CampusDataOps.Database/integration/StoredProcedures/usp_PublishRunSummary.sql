@@ -10,8 +10,15 @@ BEGIN
 
     DECLARE @IsBalanced BIT;
     DECLARE @Message NVARCHAR (400);
+    DECLARE @OpenExceptionCount INT;
+    DECLARE @OpenBlockingExceptionCount INT;
 
     SET @IsBalanced = (SELECT rr.[IsBalanced] FROM [integration].[ReconciliationResult] AS rr WHERE rr.[BatchId] = @BatchId);
+
+    SELECT
+        @OpenExceptionCount = COUNT(*),
+        @OpenBlockingExceptionCount = ISNULL(SUM(CASE WHEN w.[BlocksProcessing] = 1 THEN 1 ELSE 0 END), 0)
+    FROM [integration].[vw_OpenExceptionWorklist] AS w;
 
     SELECT
         rr.[BatchId],
@@ -25,15 +32,9 @@ BEGIN
         rr.[TargetConfirmed],
         rr.[EntityMismatchCount],
         rr.[IsBalanced],
-        openex.[OpenExceptionCount],
-        openex.[OpenBlockingExceptionCount]
+        @OpenExceptionCount AS [OpenExceptionCount],
+        @OpenBlockingExceptionCount AS [OpenBlockingExceptionCount]
     FROM [integration].[ReconciliationResult] AS rr
-    CROSS APPLY (
-        SELECT
-            COUNT(*) AS [OpenExceptionCount],
-            SUM(CASE WHEN w.[BlocksProcessing] = 1 THEN 1 ELSE 0 END) AS [OpenBlockingExceptionCount]
-        FROM [integration].[vw_OpenExceptionWorklist] AS w
-    ) AS openex
     WHERE rr.[BatchId] = @BatchId;
 
     IF @IsBalanced IS NULL

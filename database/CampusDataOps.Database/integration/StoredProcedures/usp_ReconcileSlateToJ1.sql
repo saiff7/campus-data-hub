@@ -30,6 +30,8 @@ BEGIN
 
         SELECT
             a.[ApplicationId],
+            q.[QueueId],
+            q.[ResultIdNumber] AS [TargetIdNumber],
             CASE
                 WHEN q.[QueueId] IS NOT NULL AND q.[ReconciledBatchId] IS NULL THEN oa.[ReconciliationOutcome]
                 WHEN q.[QueueId] IS NOT NULL THEN 'UNCHANGED'
@@ -37,8 +39,6 @@ BEGIN
                 ELSE 'PENDING'
             END AS [OutcomeCode],
             CASE WHEN q.[QueueId] IS NULL THEN blocking.[ExceptionReasonCode] END AS [ExceptionReasonCode],
-            q.[QueueId],
-            q.[ResultIdNumber] AS [TargetIdNumber],
             CASE
                 WHEN q.[QueueId] IS NOT NULL AND q.[ReconciledBatchId] IS NULL
                     THEN CAST(CASE

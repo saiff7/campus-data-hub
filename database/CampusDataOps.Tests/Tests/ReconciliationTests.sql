@@ -87,7 +87,9 @@ BEGIN
 
     EXEC [integration].[usp_ReconcileSlateToJ1] @BatchId = 100;
 
-    SELECT d.[ApplicationId], d.[OutcomeCode], d.[ExceptionReasonCode], d.[IsTargetConfirmed] INTO #Actual FROM [integration].[ReconciliationDetail] AS d;
+    SELECT d.[ApplicationId], d.[OutcomeCode], d.[ExceptionReasonCode], d.[IsTargetConfirmed]
+    INTO #Actual
+    FROM [integration].[ReconciliationDetail] AS d;
     SELECT TOP (0) a.[ApplicationId], a.[OutcomeCode], a.[ExceptionReasonCode], a.[IsTargetConfirmed] INTO #Expected FROM #Actual AS a;
     INSERT INTO #Expected ([ApplicationId], [OutcomeCode], [ExceptionReasonCode], [IsTargetConfirmed])
     VALUES

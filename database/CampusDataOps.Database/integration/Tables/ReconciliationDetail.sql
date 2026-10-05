@@ -8,7 +8,8 @@ CREATE TABLE [integration].[ReconciliationDetail] (
     [QueueId]             BIGINT           NULL,
     [TargetIdNumber]      INT              NULL,
     [IsTargetConfirmed]   BIT              NULL,
-    [CreatedAtUtc]        DATETIME2 (3)    CONSTRAINT [DF_integration_ReconciliationDetail_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()) NOT NULL,
+    [CreatedAtUtc]        DATETIME2 (3)    NOT NULL
+        CONSTRAINT [DF_integration_ReconciliationDetail_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT [PK_integration_ReconciliationDetail] PRIMARY KEY CLUSTERED ([BatchId] ASC, [ApplicationId] ASC),
     CONSTRAINT [FK_integration_ReconciliationDetail_Batch] FOREIGN KEY ([BatchId]) REFERENCES [audit].[BatchRun] ([BatchId]),
     CONSTRAINT [FK_integration_ReconciliationDetail_Outcome]
