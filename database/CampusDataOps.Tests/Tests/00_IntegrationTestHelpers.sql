@@ -93,3 +93,23 @@ BEGIN
     SET @ExceptionId = CAST(SCOPE_IDENTITY() AS BIGINT);
 END;
 GO
+
+CREATE PROCEDURE [IntegrationTestHelpers].[AddDecision]
+    @ApplicationId    UNIQUEIDENTIFIER,
+    @DecisionTypeCode VARCHAR (20) = 'NEW_PERSON',
+    @MatchedIdNumber  INT          = NULL,
+    @SourceHash       BINARY (32)  = 0x01
+AS
+BEGIN
+    INSERT INTO [integration].[MatchDecision] (
+        [ApplicationId], [SourceHash], [DecisionTypeCode], [RuleCode], [CandidateCount], [MatchedIdNumber],
+        [ConfidenceCategory], [DecidedBy], [DecidedAtUtc], [IsCurrent]
+    )
+    VALUES (
+        @ApplicationId, @SourceHash, @DecisionTypeCode,
+        CASE WHEN @DecisionTypeCode = 'AUTO_MATCH' THEN 'EMAIL_DOB' END,
+        CASE WHEN @MatchedIdNumber IS NULL THEN 0 ELSE 1 END,
+        @MatchedIdNumber, 'HIGH', N'SYSTEM', SYSUTCDATETIME(), 1
+    );
+END;
+GO

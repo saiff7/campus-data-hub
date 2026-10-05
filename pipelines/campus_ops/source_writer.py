@@ -14,11 +14,17 @@ log = logging.getLogger(__name__)
 
 INSERT_CHUNK_ROWS = 5000
 
+# Tables the integration writes into the simulators (through the J1-Sim import interface)
+# rather than the generator. They reference generated rows, so they are cleared first.
+INTEGRATION_WRITTEN_TABLES = ("[J1Sim].[IntegrationReceipt]",)
+
 
 def replace_source_data(connection: pyodbc.Connection, dataset: SourceDataset) -> dict[str, int]:
     cursor = connection.cursor()
     cursor.fast_executemany = True
     try:
+        for table in INTEGRATION_WRITTEN_TABLES:
+            cursor.execute(f"DELETE FROM {table};")  # noqa: S608 - fixed table names
         for row_type in reversed(LOAD_ORDER):
             cursor.execute(f"DELETE FROM {row_type.TABLE};")  # noqa: S608 - fixed table names
         loaded: dict[str, int] = {}
