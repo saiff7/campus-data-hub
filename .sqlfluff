@@ -25,3 +25,7 @@ extended_capitalisation_policy = upper
 # SQLCMD variables such as [$(SourceSystems)] name the referenced database at deploy time.
 [sqlfluff:rules:references.special_chars]
 additional_allowed_characters = $()
+
+# User-defined table types are identifiers, not built-in data types.
+[sqlfluff:rules:capitalisation.types]
+ignore_words = ExceptionCondition, ExceptionTransitionList
