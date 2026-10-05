@@ -120,6 +120,10 @@ recover: ## Resume a failed run: make recover FAILED_BATCH=<id> AT=<STEP>
 agent-install: ## Create or replace the SQL Server Agent nightly integration job
 	$(SQLCMD_RUN) -d msdb -i automation/sql-agent/01_create_nightly_integration_job.sql
 
+.PHONY: agent-run
+agent-run: ## Start the Agent job, wait for it and fail if it fails
+	$(SQLCMD_RUN) -d msdb -i automation/sql-agent/02_run_nightly_integration_job.sql
+
 .PHONY: reset-ops
 reset-ops: ## DEVELOPMENT ONLY: delete all CampusDataOps operational data (requires CONFIRM=1)
 	@test "$(CONFIRM)" = "1" || { echo "This deletes all landing, staging, integration, quality and audit rows. Re-run with CONFIRM=1"; exit 1; }

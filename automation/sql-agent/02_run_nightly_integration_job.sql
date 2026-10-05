@@ -1,0 +1,58 @@
+/*
+Starts the nightly integration Agent job and waits for it to finish, failing if the job fails
+or does not finish within 10 minutes. Used by `make agent-run` and CI; the job history and
+audit tables hold the details.
+*/
+SET NOCOUNT ON;
+
+USE [msdb];
+
+DECLARE @JobName SYSNAME = N'CampusDataOps - Nightly Integration';
+DECLARE @StartedAt DATETIME = DATEADD(SECOND, -1, GETDATE());
+DECLARE @Deadline DATETIME = DATEADD(MINUTE, 10, GETDATE());
+DECLARE @HistoryId INT;
+DECLARE @RunStatus INT;
+DECLARE @Message NVARCHAR (4000);
+
+EXEC [dbo].[sp_start_job] @job_name = @JobName;
+
+WHILE GETDATE() < @Deadline
+BEGIN
+    WAITFOR DELAY '00:00:02';
+
+    SELECT TOP (1) @HistoryId = a.[job_history_id]
+    FROM [dbo].[sysjobactivity] AS a
+    INNER JOIN [dbo].[sysjobs] AS j ON a.[job_id] = j.[job_id]
+    WHERE j.[name] = @JobName
+      AND a.[start_execution_date] >= @StartedAt
+      AND a.[stop_execution_date] IS NOT NULL
+    ORDER BY a.[start_execution_date] DESC;
+
+    IF @HistoryId IS NOT NULL
+        BREAK;
+END;
+
+IF @HistoryId IS NULL
+    THROW 50950, N'The nightly integration job did not finish within 10 minutes.', 1;
+
+SELECT @RunStatus = h.[run_status], @Message = h.[message]
+FROM [dbo].[sysjobhistory] AS h
+WHERE h.[instance_id] = @HistoryId;
+
+SELECT h.[step_id], h.[step_name], h.[run_status], h.[run_duration]
+FROM [dbo].[sysjobhistory] AS h
+INNER JOIN [dbo].[sysjobs] AS j ON h.[job_id] = j.[job_id]
+WHERE j.[name] = @JobName
+  AND h.[instance_id] <= @HistoryId
+  AND h.[instance_id] > ISNULL((
+      SELECT MAX(prior.[instance_id])
+      FROM [dbo].[sysjobhistory] AS prior
+      WHERE prior.[job_id] = h.[job_id] AND prior.[step_id] = 0 AND prior.[instance_id] < @HistoryId
+  ), 0)
+ORDER BY h.[instance_id];
+
+-- run_status 1 = succeeded.
+IF @RunStatus <> 1
+    THROW 50951, @Message, 1;
+
+PRINT N'The nightly integration job succeeded.';
