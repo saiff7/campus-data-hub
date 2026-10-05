@@ -41,7 +41,9 @@ SOURCE_DACPAC := database/SourceSystems.Database/bin/$(CONFIGURATION)/SourceSyst
 OPS_DACPAC := database/CampusDataOps.Database/bin/$(CONFIGURATION)/CampusDataOps.Database.dacpac
 
 # sqlcmd reads the password from SQLCMDPASSWORD so it never appears in the argument list.
-SQLCMD_RUN = SQLCMDPASSWORD="$$MSSQL_SA_PASSWORD" $(SQLCMD) -S "$(SQL_SERVER)" -U sa -C -b
+# -I sets QUOTED_IDENTIFIER ON: the classic ODBC sqlcmd (used in CI) defaults it OFF, and
+# procedures created that way (the tSQLt tests) cannot write to tables with filtered indexes.
+SQLCMD_RUN = SQLCMDPASSWORD="$$MSSQL_SA_PASSWORD" $(SQLCMD) -S "$(SQL_SERVER)" -U sa -C -b -I
 
 .PHONY: help
 help: ## Show available targets

@@ -85,8 +85,18 @@ directory and only `.env` was copied in.
 | `make agent-install`, `make agent-run`, `make nightly`, `make smoke` | All pass; the Python rerun reconciles |
 | `make lint` | **Failed** on the duplicated config section described above; fixed in the working repository and rerun there: exit 0 with no findings, then deploy, all test suites, the Agent job, a pipeline rerun and smoke passed again |
 
+### First CI run (PR #2)
+
+**Found:** 12 of 72 tSQLt tests errored in GitHub Actions with "INSERT failed because the following
+SET options have incorrect settings: 'QUOTED_IDENTIFIER'". CI uses the classic ODBC `sqlcmd`,
+which defaults `QUOTED_IDENTIFIER` OFF; locally go-sqlcmd defaults it ON. Test procedures keep
+the setting they were created with, and inserts into tables with filtered indexes or persisted
+computed columns require it ON. Reproduced locally by creating `QueueTests` with the setting
+OFF (the same tests failed). **Fix:** every `sqlcmd` call passes `-I`. **Re-check:** 72 tSQLt
+tests, smoke and the Agent run pass locally; CI result recorded on the PR.
+
 ### Not verified here
 
-- The extended GitHub Actions workflow (tSQLt download, Agent job, pipeline) has not run; it
-  needs a push. SQL Server Agent must be running in the CI container before `make agent-run`.
+- SQL Server Agent must be running in the CI container before `make agent-run`; confirmed only
+  by the next CI run.
 - SqlPackage still needs the .NET 8 build override on this machine (see Part 1).
