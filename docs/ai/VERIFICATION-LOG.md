@@ -46,3 +46,47 @@ directory, and only `.env` was copied in.
 - The GitHub Actions workflow has not run yet; it needs a push to GitHub.
 - SqlPackage was run through its bundled .NET 8 build on the installed .NET 10.0.7 runtime, because
   the .NET 10 build needs runtime 10.0.11. Updating the .NET SDK removes the need for the override.
+
+## 2026-10-04 to 2026-10-05: Part 2 integration and reconciliation
+
+Environment as Part 1, plus tSQLt 1.0.8083.3529 (SHA-256 `af841f35…4f50`) installed into the
+local CampusDataOps database.
+
+| Artifact | Check | Result |
+|---|---|---|
+| tSQLt under Rosetta | Spike before any Part 2 code: install, fake a cross-database view, spy a procedure, run a `NoTransaction` test of a procedure that rolls back its own transaction | All worked; the approach (fake `landing.vw_Source*` views, spy the J1-Sim adapter, `NoTransaction` for error paths) was adopted |
+| ADR-002 unchanged-row rule | Design review while writing the loaders | **Found:** "hash already landed for the key" would skip a value that changes A → B → A, leaving staging on B. **Fix:** compare with the latest landed version; ADR-002 amended; tSQLt regression test |
+| Post-deployment seeds | `make deploy` | **Found:** the new seeds redeclared `@NowUtc` in the same batch as the Part 1 seed. **Fix:** `GO` between `:r` includes |
+| Rule-disagreement check | `make deploy` | **Found:** error 8124, an aggregate mixing outer and inner columns. **Fix:** rewritten as `NOT EXISTS` |
+| Landing and data-quality procedures | Manual runs and tSQLt | **Found:** "Null value is eliminated" warnings from `MAX(CASE …)` pivots and from aggregating after an outer join. **Fix:** ranked joins and aggregate-first. A `go-sqlcmd` client stalled once while a run produced many such warnings; it has not recurred since they were removed. The connection is probable, not proven |
+| `make test-sql` | Running a test file with a compile error | **Found:** errors were hidden because sqlcmd writes them to stdout, which the target discarded. **Fix:** output shown and failures stop the target |
+| Test design | First tSQLt runs | **Found:** test procedures that insert into multi-table views do not compile, and a test's own `FakeTable` runs after compilation. **Fix:** `SetFakeViewOn` around creation and fakes in `SetUp`. Two further test bugs (an `OUTPUT` parameter read after a throw; a comma-separated helper given a value containing a comma) were fixed in the tests, not the code |
+| Recovery run errors | Code review | **Found:** a second recovery of the same run would have been reported as "a RUNNING batch already exists", because the batch-start procedure maps every duplicate-key error to that message. **Fix:** explicit pre-check with its own error |
+| Smoke test | Ran the Part 1 version after landing a Slate-Sim change dated 2026-10-05 | **Found:** its fixed 2026-09-01 watermark is refused (error 50014, watermark cannot move backwards). **Fix:** round trip reaches one minute past the last watermark; the new version passes in the same state |
+| SQL lint | Clean-clone `make lint` | **Found:** `.sqlfluff` declared one section twice, so sqlfluff exited with a config error without linting. Local checks had filtered output for violation lines and reported nothing, so this went unnoticed from the matching commit onward. **Fix:** merged the section and fixed the 19 hidden findings; lint is now run and judged by exit code |
+| Matching safety | Mutation: let two email + birth date candidates auto-match | Three tSQLt tests failed (the ambiguous-match test and two that depend on its exception); restored. Database `CHECK` constraints are tested separately with `tSQLt.ApplyConstraint` |
+| tSQLt suite | `make test-sql` | 72 tests, all pass (landing, normalization, staging, matching, exceptions, queue, reconciliation, data quality) |
+| Python suites | `make test`, `make test-db` | 78 unit and 19 database tests pass; the 9 new end-to-end scenarios run in about 80 s |
+| End-to-end on the default seed | `make nightly` twice from an empty platform | Run 1: 325 eligible, 247 created, 51 matched, 27 rejected, 298 confirmed in J1-Sim, balanced, about 7 s. Run 2: 298 unchanged, 27 rejected, no new decision, exception, queue, crosswalk or J1-Sim row |
+| SQL Server Agent | `make agent-install`, `make agent-run` | Nine steps succeed; about 6 s from an empty platform |
+| Failure and recovery | SourceSystems set READ_ONLY with a corrected applicant to send | Agent run 27 failed at PROCESS (50300); `audit.ErrorLog` held error 3906 from `J1Sim.usp_ReceiveAdmittedApplicant` against the batch and step; the row was `FAILED_RETRYABLE`. After READ_WRITE, recovery run 31 started at PROCESS by Agent wrote the record on attempt 2, reconciled, and closed the exception (OPEN → RESOLVED → RETRY_READY → REPROCESSED → CLOSED); one J1-Sim receipt for the application |
+| Redeploy idempotency | SqlPackage DeployReport against both deployed databases, before and after the lint fixes | Empty reports: no object would be changed |
+| Data-quality findings | Scorecard on the default seed | Planted cases found as specified. The generator also produces 36 active students without a directory account and 5 disbursements without a registered enrollment; these are reported as genuine findings in the synthetic data, not tuned away |
+
+## Part 2 hand-off checks (clean clone)
+
+The data volume was deleted (`make clean CONFIRM=1`), the branch was cloned into a new
+directory and only `.env` was copied in.
+
+| Check | Result |
+|---|---|
+| `make bootstrap`, then again | Exit 0 in 45 s and 25 s |
+| `make test`, `make test-db`, `make test-sql` | All pass (78, 19 and 72 tests) |
+| `make agent-install`, `make agent-run`, `make nightly`, `make smoke` | All pass; the Python rerun reconciles |
+| `make lint` | **Failed** on the duplicated config section described above; fixed in the working repository and rerun there: exit 0 with no findings, then deploy, all test suites, the Agent job, a pipeline rerun and smoke passed again |
+
+### Not verified here
+
+- The extended GitHub Actions workflow (tSQLt download, Agent job, pipeline) has not run; it
+  needs a push. SQL Server Agent must be running in the CI container before `make agent-run`.
+- SqlPackage still needs the .NET 8 build override on this machine (see Part 1).
