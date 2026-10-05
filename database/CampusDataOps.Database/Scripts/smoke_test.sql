@@ -1,8 +1,8 @@
 /*
 Post-deployment smoke test. Run against CampusDataOps after deploy and seed:
     make smoke
-Checks structure, reference data, simulator data, edge cases, cross-database agreement and
-the landing batch-control round trip. Every check runs; failures are reported together and
+Checks structure, reference and data-quality metadata, simulator data, edge cases,
+cross-database agreement and the landing batch-control round trip. Every check runs; failures are reported together and
 the script then raises an error so sqlcmd -b exits non-zero. It leaves no rows behind.
 */
 SET NOCOUNT ON;
@@ -44,7 +44,23 @@ SELECT @Actual = COUNT(*) FROM [reference].[ProgramCrosswalk];
 IF @Actual <> 9 INSERT INTO @Failure VALUES (N'Program crosswalk', CONCAT(N'expected 9, found ', @Actual));
 
 SELECT @Actual = COUNT(*) FROM [reference].[ExceptionReason] WHERE [IsActive] = 1;
-IF @Actual <> 15 INSERT INTO @Failure VALUES (N'Exception reasons', CONCAT(N'expected 15, found ', @Actual));
+IF @Actual <> 16 INSERT INTO @Failure VALUES (N'Exception reasons', CONCAT(N'expected 16, found ', @Actual));
+
+SELECT @Actual = COUNT(*) FROM [reference].[MatchRule] WHERE [IsAutoMatchEligible] = 1;
+IF @Actual <> 3 INSERT INTO @Failure VALUES (N'Automatic match rules', CONCAT(N'expected 3, found ', @Actual));
+
+SELECT @Actual = COUNT(*) FROM [reference].[ExceptionStatusTransition];
+IF @Actual <> 18 INSERT INTO @Failure VALUES (N'Exception transitions', CONCAT(N'expected 18, found ', @Actual));
+
+SELECT @Actual = COUNT(*) FROM [reference].[PipelineStep];
+IF @Actual <> 8 INSERT INTO @Failure VALUES (N'Pipeline steps', CONCAT(N'expected 8, found ', @Actual));
+
+SELECT @Actual = COUNT(*) FROM [dq].[Rule] WHERE [IsActive] = 1;
+IF @Actual <> 16 INSERT INTO @Failure VALUES (N'Data-quality rules', CONCAT(N'expected 16, found ', @Actual));
+
+-- Every rule names a check procedure that exists, so no active rule is silently never run.
+SELECT @Actual = COUNT(*) FROM [dq].[Rule] AS r WHERE r.[IsActive] = 1 AND OBJECT_ID(r.[CheckProcedure], N'P') IS NULL;
+IF @Actual <> 0 INSERT INTO @Failure VALUES (N'Data-quality check procedures', CONCAT(@Actual, N' active rules name a missing procedure'));
 
 -- Simulator data ----------------------------------------------------------------------
 IF NOT EXISTS (SELECT 1 FROM [SourceSystems].[SlateSim].[Application])
@@ -133,7 +149,7 @@ DECLARE @BatchId BIGINT;
 DECLARE @SecondBatchId BIGINT;
 DECLARE @Watermark DATETIME2 (3);
 DECLARE @NextWatermark DATETIME2 (3);
-DECLARE @ReachedWatermark DATETIME2 (3) = '2026-09-01T12:00:00';
+DECLARE @ReachedWatermark DATETIME2 (3);
 
 BEGIN TRANSACTION;
 
@@ -141,6 +157,10 @@ EXEC [landing].[usp_BeginLandingBatch]
     @SourceSystemCode = 'SLATE_SIM',
     @BatchId = @BatchId OUTPUT,
     @PreviousWatermarkUtc = @Watermark OUTPUT;
+
+-- A watermark can never move backwards, so the round trip reaches one minute past the last
+-- successful load (or a fixed date on a fresh platform).
+SET @ReachedWatermark = DATEADD(MINUTE, 1, COALESCE(@Watermark, CAST('2026-09-01T12:00:00' AS DATETIME2 (3))));
 
 EXEC [landing].[usp_EndLandingBatch]
     @BatchId = @BatchId,
