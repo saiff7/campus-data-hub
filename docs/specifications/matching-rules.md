@@ -33,7 +33,7 @@ raw value. Match joins compare stored normalized columns; they never call functi
 |---|---|---|
 | Name (`fn_NormalizeName`) | Trim; collapse internal whitespace to one space; upper-case. Accents and punctuation are kept, so `O'Brien` and `OBrien` do **not** match | Empty becomes NULL |
 | Email (`fn_NormalizeEmail`) | Trim; lower-case. Valid only with exactly one `@`, a non-empty local part, a domain that contains a dot and does not start or end with one, no spaces and no consecutive dots | Standardized email is NULL and `IsEmailValid = 0`; the raw value is kept |
-| Phone (`fn_NormalizePhone`) | Keep digits only; drop a leading `1` from 11 digits | Anything other than 10 digits is NULL with `IsPhoneValid = 0` |
+| Phone (`fn_NormalizePhone`) | Remove spaces, hyphens, dots, parentheses and a leading `+`; drop a leading `1` from 11 digits | Anything other than 10 digits, including letters or an extension, is NULL with `IsPhoneValid = 0` |
 | Postal code | First five characters when they are five digits | NULL |
 | SIS ID claim | The Slate-Sim `SIS_ID` external identifier, converted to an integer when it is exactly seven digits | NULL with `IsSisIdClaimValid = 0` |
 | Birth date | Already typed `DATE` in both systems; compared exactly | — |
