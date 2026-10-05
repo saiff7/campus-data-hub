@@ -160,13 +160,15 @@ tsqlt-install: $(TSQLT_ZIP) ## Install tSQLt into the local CampusDataOps databa
 	fi
 
 .PHONY: test-sql
+# -y 0 keeps the XML untruncated; the classic sqlcmd cannot combine it with -h -1, so the column
+# header is stripped by keeping output from the first line that starts with '<'.
 test-sql: tsqlt-install ## Run the tSQLt database unit tests (writes out/tsqlt-results.xml)
 	@for file in $(SQL_TESTS_DIR)/Tests/*.sql; do \
 		$(SQLCMD_RUN) -d CampusDataOps -i "$$file" | grep -v "^$$" || [[ $${PIPESTATUS[0]} -eq 0 ]] || { echo "Failed to create tests in $$file"; exit 1; }; \
 	done
 	@mkdir -p out; status=0; \
 	$(SQLCMD_RUN) -d CampusDataOps -Q "EXEC tSQLt.RunAll;" || status=$$?; \
-	$(SQLCMD_RUN) -d CampusDataOps -h -1 -y 0 -Q "SET NOCOUNT ON; EXEC tSQLt.XmlResultFormatter;" -o out/tsqlt-results.xml; \
+	$(SQLCMD_RUN) -d CampusDataOps -y 0 -Q "SET NOCOUNT ON; EXEC tSQLt.XmlResultFormatter;" | sed -n '/^</,$$p' > out/tsqlt-results.xml; \
 	exit $$status
 
 .PHONY: lint
