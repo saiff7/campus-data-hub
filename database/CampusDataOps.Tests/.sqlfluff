@@ -1,0 +1,4 @@
+# tSQLt conventions: test procedures are named with spaces ([test does something]) and the
+# framework API is mixed case (tSQLt.AssertEquals). Every other rule from the root config applies.
+[sqlfluff]
+exclude_rules = LT01, LT02, LT09, LT14, RF05, CP02

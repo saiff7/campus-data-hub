@@ -28,6 +28,15 @@ endif
 # /bin/sh trampolines, and macOS strips DYLD_* variables when executing /bin/sh.
 PY_RUN = $(ODBC_ENV) $(UV) run python -m
 
+# tSQLt is downloaded once into the git-ignored .tools/ folder and verified against a pinned
+# SHA-256 before use. It is installed only into development and CI databases, never shipped.
+TSQLT_VERSION := 1.0.8083.3529
+TSQLT_DIR := .tools/tsqlt
+TSQLT_ZIP := $(TSQLT_DIR)/tSQLt_V$(TSQLT_VERSION).zip
+TSQLT_URL := https://tsqlt.org/wp-content/uploads/dlm_uploads/2015/07/tSQLt_V$(TSQLT_VERSION).zip
+TSQLT_SHA256 := af841f357dd9189f8b197c34c5014fe0dbabd3be34b024ed46967dafe13d4f50
+SQL_TESTS_DIR := database/CampusDataOps.Tests
+
 SOURCE_DACPAC := database/SourceSystems.Database/bin/$(CONFIGURATION)/SourceSystems.Database.dacpac
 OPS_DACPAC := database/CampusDataOps.Database/bin/$(CONFIGURATION)/CampusDataOps.Database.dacpac
 
@@ -109,6 +118,32 @@ test: ## Run Python tests that need no database
 .PHONY: test-db
 test-db: ## Run Python tests against the deployed local database
 	CAMPUS_RUN_DB_TESTS=1 $(PY_RUN) pytest -m db
+
+$(TSQLT_ZIP):
+	mkdir -p $(TSQLT_DIR)
+	curl -fsSL -o "$@.part" "$(TSQLT_URL)"
+	echo "$(TSQLT_SHA256)  $@.part" | shasum -a 256 -c -
+	mv "$@.part" "$@"
+	cd $(TSQLT_DIR) && unzip -o -q "$(notdir $@)" PrepareServer.sql tSQLt.class.sql License.txt
+
+.PHONY: tsqlt-install
+tsqlt-install: $(TSQLT_ZIP) ## Install tSQLt into the local CampusDataOps database (development and CI only)
+	@installed=$$($(SQLCMD_RUN) -d CampusDataOps -h -1 -W -Q "SET NOCOUNT ON; IF OBJECT_ID('tSQLt.Info') IS NOT NULL SELECT Version FROM tSQLt.Info();" | tr -d '[:space:]'); \
+	if [[ "$$installed" == "$(TSQLT_VERSION)" ]]; then echo "tSQLt $$installed already installed"; else \
+		$(SQLCMD_RUN) -d master -i $(TSQLT_DIR)/PrepareServer.sql > /dev/null; \
+		$(SQLCMD_RUN) -d CampusDataOps -i $(TSQLT_DIR)/tSQLt.class.sql > /dev/null; \
+		echo "tSQLt $(TSQLT_VERSION) installed"; \
+	fi
+
+.PHONY: test-sql
+test-sql: tsqlt-install ## Run the tSQLt database unit tests (writes out/tsqlt-results.xml)
+	@for file in $(SQL_TESTS_DIR)/Tests/*.sql; do \
+		$(SQLCMD_RUN) -d CampusDataOps -i "$$file" | grep -v "^$$" || [[ $${PIPESTATUS[0]} -eq 0 ]] || { echo "Failed to create tests in $$file"; exit 1; }; \
+	done
+	@mkdir -p out; status=0; \
+	$(SQLCMD_RUN) -d CampusDataOps -Q "EXEC tSQLt.RunAll;" || status=$$?; \
+	$(SQLCMD_RUN) -d CampusDataOps -h -1 -y 0 -Q "SET NOCOUNT ON; EXEC tSQLt.XmlResultFormatter;" -o out/tsqlt-results.xml; \
+	exit $$status
 
 .PHONY: lint
 lint: ## Lint Python and SQL
