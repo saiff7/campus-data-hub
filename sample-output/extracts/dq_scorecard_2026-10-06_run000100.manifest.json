@@ -1,0 +1,85 @@
+{
+  "extract_run_id": 100,
+  "extract_type": "DQ_SCORECARD",
+  "description": "Data-quality scorecard from the latest validation run.",
+  "reporting_period": "2026-10-06",
+  "source_batch_id": 216,
+  "census_snapshot_id": null,
+  "generated_at_utc": "2026-10-06T03:25:25.592Z",
+  "generator_version": "1.0",
+  "row_count": 18,
+  "columns": [
+    {
+      "name": "ValidationRunId",
+      "type": "int"
+    },
+    {
+      "name": "BatchId",
+      "type": "int"
+    },
+    {
+      "name": "RuleCode",
+      "type": "text"
+    },
+    {
+      "name": "EntityName",
+      "type": "text"
+    },
+    {
+      "name": "Severity",
+      "type": "text"
+    },
+    {
+      "name": "OwnerDepartment",
+      "type": "text"
+    },
+    {
+      "name": "RecordsEvaluated",
+      "type": "int"
+    },
+    {
+      "name": "RecordsFailed",
+      "type": "int"
+    },
+    {
+      "name": "PassRate",
+      "type": "decimal"
+    }
+  ],
+  "sha256": "d48476c0d9cf0f5e98d455c1e2a74c43fc99e2ca32f68b3ffde6bc923fa7164f",
+  "validation_status": "PASSED",
+  "approval_status": "PENDING",
+  "security_class": "INTERNAL_AGGREGATE",
+  "control_totals": [
+    {
+      "code": "DATA_ROW_COUNT",
+      "kind": "INFO",
+      "expected": null,
+      "actual": "18.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "FAILURES_TOTAL",
+      "kind": "RECONCILIATION",
+      "expected": "331.00",
+      "actual": "331.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "RULES_EVALUATED",
+      "kind": "RECONCILIATION",
+      "expected": "18.00",
+      "actual": "18.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    }
+  ],
+  "notice": "Educational simulation built on synthetic data; not an IPEDS submission and not real student data.",
+  "suppression": "counts 1-4 shown as <5",
+  "source_sha256": "d48476c0d9cf0f5e98d455c1e2a74c43fc99e2ca32f68b3ffde6bc923fa7164f"
+}

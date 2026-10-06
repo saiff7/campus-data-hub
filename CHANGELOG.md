@@ -4,7 +4,50 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); milestones are tagged `v0.1-foundation`,
 `v0.2-integration`, `v0.3-reporting` and `v1.0-release`.
 
-## [Unreleased] - Part 2: integration and reconciliation
+## [Unreleased] - Part 3: reports, compliance and security
+
+### Added
+
+- Specifications before code: a report catalog (six reports), an IPEDS-aligned measure mapping
+  with NCES citations or labelled assumptions, extract controls, ADR-003 (census snapshots) and
+  the security model with a permission matrix.
+- J1-Sim credential awards landed and staged. They are read in full until the first credential
+  lands, because the existing watermark had already passed them.
+- Conformed `core` views over staging, and governed reporting reference data (departments,
+  divisions, the program catalog with IPEDS award levels, aid funds, aging buckets, standing
+  rules).
+- Immutable, rule-versioned census snapshots with checksums and verification.
+- Six report datasets: census, aid packaging, account aging (first-in-first-out), academic
+  progress, a masked exception worklist with audited drill-through, and leadership KPIs backed
+  by `compliance.MeasureDefinition`.
+- Extract runs for eleven types, with exact CSV lines, SHA-256, control totals, two-person
+  approval, audited export and immutability; four IPEDS-aligned aggregate mock extracts.
+- Eight least-privilege roles with raw layers denied, masked surrogate keys, program-scoped
+  row-level security, `audit.AccessEvent` and a permission-change DDL trigger.
+- `campus-ops generate-extract`, `export` (with suppressed public copies) and `run-schedule`;
+  `make extracts`, `export`, `powerbi-model` and `data-dictionary`.
+- Three SQL Server Agent jobs (daily operational reports, weekly quality report, census and
+  compliance); `make agent-run JOB=...`.
+- Two data-quality rules deferred from Part 2, and issue dispositions.
+- A `bi` star schema with data-as-of status, and a PBIP/TMDL semantic model with measures and
+  roles, generated and statically tested. **Not yet opened in Power BI Desktop**; report pages
+  and screenshots are pending a Windows session (docs/powerbi/WINDOWS-BUILD-STEPS.md).
+- tSQLt classes for core, census, reporting, compliance, security, BI and academic consistency
+  (131 tests in total); Python extract contract, extract database and Power BI model tests.
+- Data dictionary, operations handbook, access-request and recurring-report runbooks, and a
+  traceability matrix.
+
+### Changed
+
+- Schema definition files moved to `Security/Schemas/`. The CampusDataOps project references
+  the `master` DACPAC for catalog views.
+- The Agent run-and-wait script takes a job name (`02_run_agent_job.sql`); `make agent-install`
+  installs all four jobs.
+- The STAGE step stages credentials and assigns student pseudonyms. The data-quality suite runs
+  the academic consistency check. `dq.vw_CurrentDataQualityIssues` shows dispositions.
+- CI runs the new Agent jobs and checks a suppressed public export.
+
+## [0.2-integration] - Part 2: integration and reconciliation
 
 ### Added
 

@@ -137,6 +137,10 @@ JOB ?= CampusDataOps - Nightly Integration
 powerbi-model: ## Regenerate the PBIP semantic model (TMDL) from the deployed bi views and dax/Measures.dax
 	$(ODBC_ENV) $(UV) run python powerbi/tools/generate_tmdl.py
 
+.PHONY: data-dictionary
+data-dictionary: ## Regenerate docs/DATA-DICTIONARY.md from the deployed database catalog
+	$(ODBC_ENV) $(UV) run python docs/tools/generate_data_dictionary.py
+
 .PHONY: agent-install
 agent-install: ## Create or replace the SQL Server Agent jobs (nightly, daily reports, weekly quality, census)
 	@for script in $(AGENT_JOB_SCRIPTS); do $(SQLCMD_RUN) -d msdb -i "automation/sql-agent/$$script"; done

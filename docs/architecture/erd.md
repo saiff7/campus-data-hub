@@ -427,3 +427,58 @@ erDiagram
         varchar DetailCode "codes only"
     }
 ```
+
+## CampusDataOps census, extracts and security (Part 3)
+
+```mermaid
+erDiagram
+    CensusRuleVersion ||--o{ CensusSnapshot : "rules of"
+    CensusSnapshot ||--o{ CensusSnapshotEnrollment : "frozen rows"
+    CensusSnapshot ||--o{ ExtractRun : "source of census extracts"
+    ExtractType ||--o{ ExtractRun : "type of"
+    ExtractRun ||--o{ ExtractRow : "exact CSV lines"
+    ExtractRun ||--o{ ExtractControlTotal : "checked by"
+    UserProgramScope }o--|| AcademicProgram : "scopes"
+    StudentPseudonym ||--o| CensusSnapshotEnrollment : "masks IdNumber of"
+
+    CensusSnapshot {
+        int CensusSnapshotId PK
+        varchar TermCode "UQ with RuleVersion"
+        varchar RuleVersion FK
+        bigint SourceBatchId FK
+        binary RowChecksum "SHA-256 of rows"
+        int CaptureLagDays "computed"
+    }
+    CensusSnapshotEnrollment {
+        int CensusSnapshotId PK, FK
+        int IdNumber PK
+        varchar ProgramCode "row-level security"
+        decimal CensusCredits
+        bit IsCensusIncluded
+        varchar ExclusionReason
+    }
+    ExtractRun {
+        bigint ExtractRunId PK
+        varchar ReportingPeriod
+        varchar ExtractStatusCode
+        varchar ValidationStatusCode
+        varchar ApprovalStatusCode "approver differs from requester"
+        binary ContentSha256
+    }
+    ExtractControlTotal {
+        bigint ExtractRunId PK, FK
+        varchar ControlCode PK
+        decimal ExpectedValue
+        decimal ActualValue
+        varchar OutcomeCode "PASS WARN FAIL"
+    }
+    StudentPseudonym {
+        int IdNumber PK
+        int StudentKey UK "random order"
+        char MaskedStudentId "computed"
+    }
+```
+
+Census snapshots, completed extract runs and their lines and controls are immutable (triggers).
+`audit.AccessEvent` and `audit.PermissionChangeEvent` record privileged access and every
+permission change.

@@ -1,0 +1,100 @@
+{
+  "extract_run_id": 98,
+  "extract_type": "IPEDS_SFA",
+  "description": "Educational simulation of the IPEDS Student Financial Aid component; not an IPEDS submission.",
+  "reporting_period": "2025-2026",
+  "source_batch_id": 216,
+  "census_snapshot_id": null,
+  "generated_at_utc": "2026-10-06T03:25:25.075Z",
+  "generator_version": "1.0",
+  "row_count": 10,
+  "columns": [
+    {
+      "name": "ReportingPeriod",
+      "type": "text"
+    },
+    {
+      "name": "StudentGroup",
+      "type": "text"
+    },
+    {
+      "name": "AidType",
+      "type": "text"
+    },
+    {
+      "name": "RecipientCount",
+      "type": "count"
+    },
+    {
+      "name": "TotalAmount",
+      "type": "decimal"
+    },
+    {
+      "name": "AverageAmount",
+      "type": "decimal"
+    }
+  ],
+  "sha256": "b547cd7386cf170b883cb838478ff36308a33428a596fa8d7c4552c4a1cbbd01",
+  "validation_status": "PASSED",
+  "approval_status": "PENDING",
+  "security_class": "INTERNAL_AGGREGATE",
+  "control_totals": [
+    {
+      "code": "DATA_ROW_COUNT",
+      "kind": "INFO",
+      "expected": null,
+      "actual": "10.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "GROUP_1_AID_AT_MOST_COHORT",
+      "kind": "RULE",
+      "expected": "1155.00",
+      "actual": "552.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "GROUP_1_COHORT",
+      "kind": "INFO",
+      "expected": null,
+      "actual": "1155.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "GROUP_1_PELL_TOTAL",
+      "kind": "RECONCILIATION",
+      "expected": "900425.00",
+      "actual": "900425.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "GROUP_2_AID_AT_MOST_COHORT",
+      "kind": "RULE",
+      "expected": "218.00",
+      "actual": "107.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "GROUP_2_AT_MOST_GROUP_1",
+      "kind": "RULE",
+      "expected": "1155.00",
+      "actual": "218.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    }
+  ],
+  "notice": "Educational simulation built on synthetic data; not an IPEDS submission and not real student data.",
+  "suppression": "counts 1-4 shown as <5",
+  "source_sha256": "b547cd7386cf170b883cb838478ff36308a33428a596fa8d7c4552c4a1cbbd01"
+}

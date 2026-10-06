@@ -23,8 +23,8 @@ flowchart TB
 
     GEN["Python generator<br/>campus-ops load-sources"]
     HUB["CampusDataOps<br/>integration, quality, audit, reporting"]
-    AGENT["SQL Server Agent<br/>nightly integration job"]
-    PBI["Power BI<br/>(Part 3)"]
+    AGENT["SQL Server Agent<br/>nightly, daily, weekly and census jobs"]
+    PBI["Power BI<br/>(model built; Desktop pending)"]
 
     GEN -->|deterministic synthetic rows| Sources
     ADM -.->|works in| SLATE
@@ -34,7 +34,7 @@ flowchart TB
     DIR -->|accounts, groups| HUB
     HUB -->|controlled student writes| J1
     AGENT -->|runs batches| HUB
-    HUB -->|curated views| PBI
+    HUB -->|masked bi star schema| PBI
     OPS -->|resolves exceptions| HUB
     IR -->|census and extracts| HUB
 ```
@@ -49,9 +49,9 @@ with a later part are designed in [BLUEPRINT.md](../../BLUEPRINT.md) and not yet
 | Slate-Sim | Admissions CRM: people, applications, status history, program choices, contact points, external identifiers, export queue | Admissions | Part 1 |
 | J1-Sim | Authoritative SIS: people, students, terms, programs, sections, enrollment, grades, aid, ledger, credentials | Registrar, Financial Aid, Student Accounts | Part 1 |
 | Directory-Sim | Identity: accounts, group membership, enable/disable history | IT Identity Services | Part 1 |
-| CampusDataOps | Integration hub: reference data, audit, landing, staging, integration and data quality; reporting layers follow | Data Operations | Parts 1–2; reporting and compliance in Part 3 |
-| SQL Server Agent | Scheduling and job history | Data Operations | Nightly integration job, Part 2 |
-| Power BI | Operational and leadership reporting | Institutional Research | Part 3 |
+| CampusDataOps | Integration hub and reporting platform: reference, audit, landing, staging, core, integration, data quality, reporting, compliance, security and bi | Data Operations | Parts 1–3 |
+| SQL Server Agent | Scheduling and job history | Data Operations | Nightly integration (Part 2); daily reports, weekly quality and census jobs (Part 3) |
+| Power BI | Operational and leadership reporting | Institutional Research | Part 3: semantic model as text; report pages pending a Windows session |
 
 ## Trust boundaries
 
@@ -61,8 +61,9 @@ with a later part are designed in [BLUEPRINT.md](../../BLUEPRINT.md) and not yet
   invalid term or an orphan account can exist in the sources.
 - **Hub to SIS.** Writes back to J1-Sim go only through `J1Sim.usp_ReceiveAdmittedApplicant`, a
   simulated import interface with idempotency receipts, called from one adapter procedure.
-- **Reporting.** Consumers will read curated `reporting` and `compliance` objects, never `landing`
-  or source tables (Part 3 roles enforce this).
+- **Reporting.** Consumers read curated `reporting`, `compliance` and `bi` objects through
+  least-privilege roles. `landing`, `staging` and `core` are denied to every role
+  ([security model](security-model.md)).
 
 ## Runtime environment
 
