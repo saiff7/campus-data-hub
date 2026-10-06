@@ -21,6 +21,8 @@ build/
 
 # Generated local output
 /out/
+# Downloaded third-party tools (tSQLt release; checksum pinned in the Makefile)
+/.tools/
 *.log
 
 # OS / editors

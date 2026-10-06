@@ -3,7 +3,9 @@ CREATE PROCEDURE [audit].[usp_LogBatchStart]
     @SourceSystemCode     VARCHAR (20)  = NULL,
     @PreviousWatermarkUtc DATETIME2 (3) = NULL,
     @RequestedAtUtc       DATETIME2 (3) = NULL,
-    @BatchId              BIGINT OUTPUT
+    @BatchId              BIGINT OUTPUT,
+    @ParentBatchId        BIGINT        = NULL,
+    @RecoveryOfBatchId    BIGINT        = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -21,6 +23,8 @@ BEGIN
         INSERT INTO [audit].[BatchRun] (
             [ProcessName],
             [SourceSystemCode],
+            [ParentBatchId],
+            [RecoveryOfBatchId],
             [BatchStatusCode],
             [RequestedAtUtc],
             [StartedAtUtc],
@@ -29,6 +33,8 @@ BEGIN
         VALUES (
             @ProcessName,
             @SourceSystemCode,
+            @ParentBatchId,
+            @RecoveryOfBatchId,
             'RUNNING',
             ISNULL(@RequestedAtUtc, @NowUtc),
             @NowUtc,

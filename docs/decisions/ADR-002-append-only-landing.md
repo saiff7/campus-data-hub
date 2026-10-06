@@ -1,6 +1,7 @@
 # ADR-002: Landing data is append-only
 
-- **Status:** Accepted
+- **Status:** Accepted; amended 2026-10-04 in Part 2 (unchanged rows are compared with the
+  latest landed version, and loads read at or after the watermark)
 - **Date:** 2026-10-04
 - **Context owner:** Data Operations
 
@@ -27,9 +28,15 @@ Landing tables are **append-only**. Each load inserts new rows tagged with `Batc
 `SourceSystemCode`, `SourceRecordId`, `SourceUpdatedAt`, `IngestedAt` and a SHA-256 `RecordHash`
 of the business columns. Landing rows are never updated or deleted by pipeline code.
 
-- A row whose `SourceRecordId` and `RecordHash` already exist is counted as **unchanged** and is not
-  inserted again. Rows read must equal inserted + unchanged + rejected;
+- A row whose `RecordHash` equals the **latest landed version of the same key** is counted as
+  **unchanged** and is not inserted again. Comparing with the latest version, not with any
+  earlier one, matters: a value that changes A → B → A must land the second A, or staging would
+  keep B. Each landing table has a unique index on (key, `BatchId`), so a batch can land at
+  most one version of a key. Rows read must equal inserted + unchanged + rejected;
   `landing.usp_EndLandingBatch` refuses to close a successful batch that does not balance.
+- Loads select rows whose source `UpdatedAtUtc` is **at or after** the previous watermark.
+  Re-reading the boundary rows is safe because of the hash comparison, and it avoids missing a
+  row committed with the same timestamp as the last one read.
 - Cleanup (standardization, typing, deduplication) happens in `staging`, which keeps the original
   value next to the standardized one. Nothing is silently corrected in landing.
 - The incremental watermark advances only when a batch succeeds and never moves backwards. Both

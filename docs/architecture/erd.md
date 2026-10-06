@@ -87,6 +87,7 @@ erDiagram
     AcademicTerm ||--o{ StudentAccountTransaction : "for term"
     Student ||--o{ CredentialAwarded : earns
     AcademicProgram ||--o{ CredentialAwarded : "for program"
+    Person ||--o{ IntegrationReceipt : "created or updated by import"
 
     Person {
         int IdNumber PK "7-digit institutional ID"
@@ -156,7 +157,16 @@ erDiagram
         varchar ProgramCode FK
         varchar TermCode FK
     }
+    IntegrationReceipt {
+        binary IdempotencyKey PK "from CampusDataOps outbound queue"
+        int IdNumber FK
+        varchar ActionCode
+        uniqueidentifier SourceApplicationId
+    }
 ```
+
+`IntegrationReceipt` belongs to the simulated import interface (Part 2): a replayed key returns
+the original ID number, so a lost acknowledgement cannot create a second person.
 
 ## Directory-Sim (identity)
 
@@ -245,12 +255,175 @@ erDiagram
         bit IsActive
     }
     ExceptionReason {
-        varchar ExceptionReasonCode PK "15 managed categories"
+        varchar ExceptionReasonCode PK "16 managed categories"
         varchar Category
         varchar DefaultSeverity
         bit BlocksProcessing
     }
 ```
 
-`reference.AcademicTerm`, `reference.ProgramCrosswalk` and `reference.ExceptionReason` stand
-alone in Part 1; integration and data-quality tables reference them from Part 2.
+Part 2 adds `ParentBatchId` (a landing batch's pipeline run) and `RecoveryOfBatchId` (the FAILED
+run a recovery run resumes, at most one) to `audit.BatchRun`.
+
+## CampusDataOps landing and staging (Part 2)
+
+Every landing table has the same lineage columns (`LandingRowId` PK, `BatchId` FK, constant
+`SourceSystemCode`, `SourceRecordId`, `SourceUpdatedAtUtc`, `RecordHash`, `RequestId`,
+`IngestedAtUtc`) and a unique index on (key, `BatchId`). Staging rows point at the landed row
+they were built from.
+
+```mermaid
+erDiagram
+    BatchRun ||--o{ SlateApplicantRaw : lands
+    BatchRun ||--o{ SlateApplicationRaw : lands
+    BatchRun ||--o{ J1PersonRaw : lands
+    SlateApplicantRaw ||--o{ Applicant : "latest version staged"
+    SlateApplicationRaw ||--o{ Applicant : "latest version staged"
+    J1PersonRaw ||--o{ Person : "latest version staged"
+
+    SlateApplicationRaw {
+        bigint LandingRowId PK
+        bigint BatchId FK "UQ with ApplicationId"
+        uniqueidentifier ApplicationId
+        binary RecordHash "SHA-256 over FOR JSON row"
+    }
+    Applicant {
+        uniqueidentifier ApplicationId PK
+        uniqueidentifier SlatePersonId
+        binary SourceHash "changes only when source values change"
+        bit IsEligible
+        nvarchar EmailRaw
+        nvarchar EmailStd "NULL when invalid"
+        varchar TermValidationCode
+        varchar ProgramValidationCode
+        varchar MissingRequiredFields
+    }
+    Person {
+        int IdNumber PK
+        nvarchar LastNameStd "indexed with first name, birth date, postal code"
+        nvarchar EmailStd "indexed with birth date"
+        varchar StudentStatus
+    }
+```
+
+The same pattern applies to `J1EnrollmentRaw`, `J1FinancialAidRaw`, `J1AccountTransactionRaw` and
+`DirectoryAccountRaw` (staged one-for-one) and to `J1AccountControlTotal` (read by data quality).
+
+## CampusDataOps integration (Part 2)
+
+```mermaid
+erDiagram
+    MatchEvaluation ||--o{ MatchCandidate : finds
+    MatchEvaluation ||--o{ MatchDecision : "decided by"
+    MatchDecisionType ||--o{ MatchDecision : classifies
+    MatchRule ||--o{ MatchCandidate : "found by"
+    MatchDecision ||--o{ OutboundStudentQueue : "queued from"
+    OutboundStudentQueue ||--o| SourceCrosswalk : "creates on success"
+    ErrorLog ||--o{ OutboundStudentQueue : "last error"
+    IntegrationException ||--o{ ExceptionAction : "history"
+    ExceptionStatusTransition ||--o{ ExceptionAction : "allows"
+    ExceptionReason ||--o{ IntegrationException : classifies
+    OutboundStudentQueue ||--o{ ReconciliationDetail : "outcome of"
+    ReconciliationResult ||--o{ ReconciliationDetail : summarizes
+
+    MatchEvaluation {
+        bigint MatchEvaluationId PK
+        bigint BatchId FK "UQ with ApplicationId"
+        binary SourceHash
+    }
+    MatchCandidate {
+        bigint MatchEvaluationId PK, FK
+        varchar RuleCode PK, FK
+        int CandidateIdNumber PK
+        bit MatchedOnEmail "evidence flags, no values"
+    }
+    MatchDecision {
+        bigint MatchDecisionId PK
+        uniqueidentifier ApplicationId "one current (filtered unique index)"
+        varchar DecisionTypeCode FK "CHECK: AUTO_MATCH unique and automatic"
+        int CandidateCount
+        int MatchedIdNumber "NULL for blocked decisions (CHECK)"
+        varchar ConflictCode
+        nvarchar DecidedBy
+    }
+    IntegrationException {
+        bigint ExceptionId PK
+        varchar ExceptionReasonCode FK "one active per subject and reason"
+        uniqueidentifier ApplicationId "or SubjectBatchId"
+        varchar ExceptionStatusCode FK
+        binary SourceHash "holds an analyst closure until the source changes"
+        int OccurrenceCount
+    }
+    ExceptionAction {
+        bigint ExceptionActionId PK
+        bigint ExceptionId FK
+        varchar FromStatusCode FK "composite FK to allowed transitions"
+        varchar ToStatusCode FK
+        nvarchar ActionBy
+    }
+    OutboundStudentQueue {
+        bigint QueueId PK
+        binary IdempotencyKey UK
+        uniqueidentifier ApplicationId "one live row (filtered unique index)"
+        varchar ActionCode FK
+        varchar QueueStatusCode FK
+        smallint AttemptCount
+        bigint ReconciledBatchId
+    }
+    SourceCrosswalk {
+        bigint SourceCrosswalkId PK
+        varchar SourceRecordId UK "Slate-Sim PersonId"
+        int TargetIdNumber UK
+    }
+    ReconciliationDetail {
+        bigint BatchId PK
+        uniqueidentifier ApplicationId PK "one outcome each"
+        varchar OutcomeCode FK
+        bit IsTargetConfirmed
+    }
+    ReconciliationResult {
+        bigint BatchId PK "CHECK: outcomes add up to eligible"
+        int SourceEligible
+        int Processed "Matched + Created"
+        int TargetConfirmed
+        bit IsBalanced
+    }
+```
+
+`ReconciliationEntityCount` (per run and entity: landed vs staged keys) sits beside
+`ReconciliationResult`.
+
+## CampusDataOps data quality (Part 2)
+
+```mermaid
+erDiagram
+    Rule ||--o{ RuleExecution : "evaluated in"
+    ValidationRun ||--o{ RuleExecution : contains
+    RuleExecution ||--o{ RuleResult : "failing records"
+
+    Rule {
+        varchar RuleCode PK
+        varchar Severity
+        nvarchar OwnerDepartment
+        bit IsActive
+        date EffectiveFrom
+        nvarchar CheckProcedure
+    }
+    ValidationRun {
+        bigint ValidationRunId PK
+        bigint BatchId UK
+        int RulesEvaluated
+        int FailuresFound
+    }
+    RuleExecution {
+        bigint ValidationRunId PK, FK
+        varchar RuleCode PK, FK
+        int RecordsEvaluated
+        int RecordsFailed
+    }
+    RuleResult {
+        bigint RuleResultId PK
+        varchar RecordKey "UQ with run and rule"
+        varchar DetailCode "codes only"
+    }
+```

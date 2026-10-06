@@ -3,7 +3,8 @@
 -- error, so that situation is reported explicitly instead of being skipped silently.
 CREATE PROCEDURE [audit].[usp_LogError]
     @BatchId     BIGINT = NULL,
-    @BatchStepId BIGINT = NULL
+    @BatchStepId BIGINT = NULL,
+    @ErrorLogId  BIGINT = NULL OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -45,4 +46,6 @@ BEGIN
         ERROR_LINE(),
         ERROR_MESSAGE()
     );
+
+    SET @ErrorLogId = CAST(SCOPE_IDENTITY() AS BIGINT);
 END;

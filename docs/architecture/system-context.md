@@ -23,7 +23,7 @@ flowchart TB
 
     GEN["Python generator<br/>campus-ops load-sources"]
     HUB["CampusDataOps<br/>integration, quality, audit, reporting"]
-    AGENT["SQL Server Agent<br/>(scheduling from Part 2)"]
+    AGENT["SQL Server Agent<br/>nightly integration job"]
     PBI["Power BI<br/>(Part 3)"]
 
     GEN -->|deterministic synthetic rows| Sources
@@ -49,8 +49,8 @@ with a later part are designed in [BLUEPRINT.md](../../BLUEPRINT.md) and not yet
 | Slate-Sim | Admissions CRM: people, applications, status history, program choices, contact points, external identifiers, export queue | Admissions | Part 1 |
 | J1-Sim | Authoritative SIS: people, students, terms, programs, sections, enrollment, grades, aid, ledger, credentials | Registrar, Financial Aid, Student Accounts | Part 1 |
 | Directory-Sim | Identity: accounts, group membership, enable/disable history | IT Identity Services | Part 1 |
-| CampusDataOps | Integration hub: reference data, audit, landing through reporting layers | Data Operations | Part 1 foundation; layers filled in Parts 2–3 |
-| SQL Server Agent | Scheduling and job history | Data Operations | Enabled in the container; jobs arrive in Part 2 |
+| CampusDataOps | Integration hub: reference data, audit, landing, staging, integration and data quality; reporting layers follow | Data Operations | Parts 1–2; reporting and compliance in Part 3 |
+| SQL Server Agent | Scheduling and job history | Data Operations | Nightly integration job, Part 2 |
 | Power BI | Operational and leadership reporting | Institutional Research | Part 3 |
 
 ## Trust boundaries
@@ -59,8 +59,8 @@ with a later part are designed in [BLUEPRINT.md](../../BLUEPRINT.md) and not yet
   references (program codes, entry terms, SIS IDs in the CRM, `EmployeeId` in the directory) are
   not foreign keys. They are validated during integration, which is why edge cases such as an
   invalid term or an orphan account can exist in the sources.
-- **Hub to SIS.** Writes back to J1-Sim will go only through controlled, idempotent procedures
-  (Part 2).
+- **Hub to SIS.** Writes back to J1-Sim go only through `J1Sim.usp_ReceiveAdmittedApplicant`, a
+  simulated import interface with idempotency receipts, called from one adapter procedure.
 - **Reporting.** Consumers will read curated `reporting` and `compliance` objects, never `landing`
   or source tables (Part 3 roles enforce this).
 
@@ -71,4 +71,5 @@ with a later part are designed in [BLUEPRINT.md](../../BLUEPRINT.md) and not yet
 | SQL Server 2022 Developer | Docker container `campus-data-hub-sql` (amd64; Rosetta on Apple Silicon) | Same Compose file on `ubuntu-24.04` |
 | Schema deployment | `dotnet build` and SqlPackage publish of two DACPACs | Same, via `make bootstrap` |
 | Data | `campus-ops load-sources` replaces simulator data in one transaction | Same |
-| Verification | `make smoke`, `make test`, `make test-db` | Same, plus a full-history secret scan |
+| Scheduling | SQL Server Agent job from `make agent-install` | Same; CI runs the job once with `make agent-run` |
+| Verification | `make smoke`, `make test`, `make test-db`, `make test-sql` | Same, plus a full-history secret scan |

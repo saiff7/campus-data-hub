@@ -25,7 +25,7 @@ jobs:
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run sqlfluff lint database
+      - run: uv run sqlfluff lint database automation
       - run: uv run pytest -m "not db"
 
   secrets:
@@ -90,8 +90,25 @@ jobs:
         run: make bootstrap CONFIGURATION=Release
       - name: Rerun bootstrap to prove idempotency
         run: make bootstrap CONFIGURATION=Release
-      - name: Database tests
+      - name: Database tests (Python, including end-to-end pipeline scenarios)
         run: make test-db
+      - name: Database unit tests (tSQLt)
+        run: make test-sql
+      - name: Upload tSQLt results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tsqlt-results
+          path: out/tsqlt-results.xml
+          if-no-files-found: ignore
+      - name: Install and run the SQL Server Agent nightly job
+        run: |
+          make agent-install
+          make agent-run
+      - name: Rerun the pipeline from Python (must succeed and reconcile)
+        run: make nightly
+      - name: Smoke test after integration
+        run: make smoke
       - name: SQL Server logs on failure
         if: failure()
         run: docker compose logs sqlserver --tail 200
