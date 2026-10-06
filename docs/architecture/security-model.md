@@ -59,7 +59,7 @@ specified matrix]` fails on any difference, including an extra grant.
 | `role_integration_service` | EXECUTE | `integration.usp_StartPipelineRun`, `integration.usp_RunPipelineStep`, `integration.usp_OpenRecoveryRun`, `integration.usp_TransitionException`, `integration.usp_ResolveExceptionMatch` |
 | | EXECUTE | `compliance.usp_CaptureCensusSnapshot`, `compliance.usp_RunScheduledExtracts`, `compliance.usp_GenerateExtract`, `compliance.usp_GetExtractForExport` |
 | | SELECT | `reporting.vw_ExceptionWorklist` |
-| | EXECUTE | `reporting.usp_GetExceptionDetail` |
+| | EXECUTE | `reporting.usp_GetExceptionDetail`, `dq.usp_RecordIssueDisposition` |
 | `role_enrollment_reporter` | SELECT | `reporting.vw_EnrollmentCensus`, `reporting.vw_AcademicProgress` |
 | | EXECUTE | `reporting.usp_ReportEnrollmentByTerm`, `reporting.usp_ReportAcademicOutcomes`, `compliance.usp_GetExtractForExport` |
 | `role_financial_aid_reporter` | SELECT | `reporting.vw_FinancialAidPackaging` |

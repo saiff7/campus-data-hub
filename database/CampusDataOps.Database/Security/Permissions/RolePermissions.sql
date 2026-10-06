@@ -26,6 +26,8 @@ GRANT EXECUTE ON OBJECT::[reporting].[usp_GetExceptionDetail] TO [role_integrati
 GO
 GRANT SELECT ON OBJECT::[reporting].[vw_ExceptionWorklist] TO [role_integration_service];
 GO
+GRANT EXECUTE ON OBJECT::[dq].[usp_RecordIssueDisposition] TO [role_integration_service];
+GO
 
 -- role_enrollment_reporter
 GRANT SELECT ON OBJECT::[reporting].[vw_EnrollmentCensus] TO [role_enrollment_reporter];

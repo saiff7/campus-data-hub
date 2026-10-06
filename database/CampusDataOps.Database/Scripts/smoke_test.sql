@@ -62,7 +62,7 @@ SELECT @Actual = COUNT(*) FROM [reference].[PipelineStep];
 IF @Actual <> 8 INSERT INTO @Failure VALUES (N'Pipeline steps', CONCAT(N'expected 8, found ', @Actual));
 
 SELECT @Actual = COUNT(*) FROM [dq].[Rule] WHERE [IsActive] = 1;
-IF @Actual <> 16 INSERT INTO @Failure VALUES (N'Data-quality rules', CONCAT(N'expected 16, found ', @Actual));
+IF @Actual <> 18 INSERT INTO @Failure VALUES (N'Data-quality rules', CONCAT(N'expected 18, found ', @Actual));
 
 -- Every rule names a check procedure that exists, so no active rule is silently never run.
 SELECT @Actual = COUNT(*) FROM [dq].[Rule] AS r WHERE r.[IsActive] = 1 AND OBJECT_ID(r.[CheckProcedure], N'P') IS NULL;

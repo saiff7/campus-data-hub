@@ -28,6 +28,7 @@ DELETE FROM [integration].[OutboundStudentQueue];
 DELETE FROM [integration].[MatchCandidate];
 DELETE FROM [integration].[MatchDecision];
 DELETE FROM [integration].[MatchEvaluation];
+DELETE FROM [dq].[IssueDisposition];
 DELETE FROM [dq].[RuleResult];
 DELETE FROM [dq].[RuleExecution];
 DELETE FROM [dq].[ValidationRun];

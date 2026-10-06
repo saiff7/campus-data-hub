@@ -131,6 +131,7 @@ BEGIN
         (N'role_integration_service', 'GRANT', 'EXECUTE', 'OBJECT_OR_COLUMN', N'compliance.usp_GenerateExtract'),
         (N'role_integration_service', 'GRANT', 'EXECUTE', 'OBJECT_OR_COLUMN', N'compliance.usp_GetExtractForExport'),
         (N'role_integration_service', 'GRANT', 'EXECUTE', 'OBJECT_OR_COLUMN', N'compliance.usp_RunScheduledExtracts'),
+        (N'role_integration_service', 'GRANT', 'EXECUTE', 'OBJECT_OR_COLUMN', N'dq.usp_RecordIssueDisposition'),
         (N'role_integration_service', 'GRANT', 'EXECUTE', 'OBJECT_OR_COLUMN', N'integration.usp_OpenRecoveryRun'),
         (N'role_integration_service', 'GRANT', 'EXECUTE', 'OBJECT_OR_COLUMN', N'integration.usp_ResolveExceptionMatch'),
         (N'role_integration_service', 'GRANT', 'EXECUTE', 'OBJECT_OR_COLUMN', N'integration.usp_RunPipelineStep'),

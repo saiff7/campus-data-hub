@@ -12,6 +12,7 @@ BEGIN
     EXEC tSQLt.FakeTable @TableName = N'staging.Enrollment';
     EXEC tSQLt.FakeTable @TableName = N'staging.FinancialAidAward';
     EXEC tSQLt.FakeTable @TableName = N'staging.AccountTransaction';
+    EXEC tSQLt.FakeTable @TableName = N'staging.CredentialAwarded';
     EXEC tSQLt.FakeTable @TableName = N'staging.DirectoryAccount';
     EXEC tSQLt.FakeTable @TableName = N'landing.J1AccountControlTotal';
     EXEC tSQLt.FakeTable @TableName = N'reference.AcademicTerm';

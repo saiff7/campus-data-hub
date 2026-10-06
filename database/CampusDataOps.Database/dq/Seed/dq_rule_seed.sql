@@ -96,7 +96,15 @@ VALUES
         '2026-01-01', 1,
         N'Every application written to J1-Sim has an integration.SourceCrosswalk row for its Slate-Sim person.',
         N'Investigate the outbound write; the crosswalk is written in the same transaction.',
-        N'dq.usp_CheckCrossSystemConsistency');
+        N'dq.usp_CheckCrossSystemConsistency'),
+    ('CRED_EARNED_CREDITS', N'A credential follows completion of the program''s required credits.', 'CREDENTIAL', 'HIGH',
+        N'Registrar', '2026-10-01', 1,
+        N'Credits graded D or better in terms starting no later than the award term reach the program''s required credits.',
+        N'Review the degree audit; correct the credential or the grade record in J1-Sim.', N'dq.usp_CheckAcademicConsistency'),
+    ('STU_STATUS_CONSISTENT', N'Student status agrees with credentials and registrations.', 'STUDENT', 'MEDIUM', N'Registrar',
+        '2026-10-01', 1,
+        N'A GRADUATED student has a credential, and a WITHDRAWN student has no REGISTERED section in a term that has not ended.',
+        N'Correct the student status, or drop the remaining registrations, in J1-Sim.', N'dq.usp_CheckAcademicConsistency');
 
 UPDATE t
 SET t.[Description] = s.[Description],
