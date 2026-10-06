@@ -33,6 +33,7 @@ GO
 CREATE PROCEDURE [CensusTests].[SetUp]
 AS
 BEGIN
+    EXEC [IntegrationTestHelpers].[DropProgramScopePolicyForTest];
     EXEC tSQLt.FakeTable @TableName = N'core.vw_StudentTermCensus';
     EXEC tSQLt.FakeTable @TableName = N'audit.BatchRun';
     EXEC tSQLt.FakeTable @TableName = N'reference.AcademicTerm';
@@ -196,10 +197,33 @@ BEGIN
 END;
 GO
 
--- Refusals throw before any transaction, but XACT_ABORT ends tSQLt's own transaction, so these
--- run outside it.
+EXEC tSQLt.SetFakeViewOff @SchemaName = N'core';
+GO
+
+/*
+Capture refusals. They raise under XACT_ABORT, which ends tSQLt's transaction, so they run outside
+it (NoTransaction). They never fake the policy-bound snapshot rows table, so they need no
+security-policy change, which could not be rolled back here.
+*/
+EXEC tSQLt.NewTestClass @ClassName = N'CensusRefusalTests';
+GO
+
+CREATE PROCEDURE [CensusRefusalTests].[SetUp]
+AS
+BEGIN
+    EXEC tSQLt.FakeTable @TableName = N'audit.BatchRun';
+    EXEC tSQLt.FakeTable @TableName = N'reference.AcademicTerm';
+    EXEC tSQLt.FakeTable @TableName = N'compliance.CensusRuleVersion';
+    EXEC tSQLt.FakeTable @TableName = N'compliance.CensusSnapshot', @Identity = 1, @ComputedColumns = 1;
+
+    INSERT INTO [reference].[AcademicTerm] ([TermCode], [TermType], [CensusDate]) VALUES ('2025FA', 'FALL', '2025-09-16');
+    INSERT INTO [compliance].[CensusRuleVersion] ([RuleVersion], [FullTimeMinCredits], [IsCurrent]) VALUES ('CENSUS-T', 12.0, 1);
+    INSERT INTO [audit].[BatchRun] ([BatchId], [ProcessName], [BatchStatusCode]) VALUES (7, 'NIGHTLY_INTEGRATION', 'SUCCEEDED');
+END;
+GO
+
 --[@tSQLt:NoTransaction](DEFAULT)
-CREATE PROCEDURE [CensusTests].[test capture is refused before the census date]
+CREATE PROCEDURE [CensusRefusalTests].[test capture is refused before the census date]
 AS
 BEGIN
     EXEC tSQLt.ExpectException @ExpectedErrorNumber = 52003;
@@ -208,7 +232,7 @@ END;
 GO
 
 --[@tSQLt:NoTransaction](DEFAULT)
-CREATE PROCEDURE [CensusTests].[test capture is refused while a nightly run is running]
+CREATE PROCEDURE [CensusRefusalTests].[test capture is refused while a nightly run is running]
 AS
 BEGIN
     INSERT INTO [audit].[BatchRun] ([BatchId], [ProcessName], [BatchStatusCode]) VALUES (9, 'NIGHTLY_INTEGRATION', 'RUNNING');
@@ -219,7 +243,7 @@ END;
 GO
 
 --[@tSQLt:NoTransaction](DEFAULT)
-CREATE PROCEDURE [CensusTests].[test capture is refused before any nightly run has succeeded]
+CREATE PROCEDURE [CensusRefusalTests].[test capture is refused before any nightly run has succeeded]
 AS
 BEGIN
     DELETE FROM [audit].[BatchRun];
@@ -227,7 +251,4 @@ BEGIN
     EXEC tSQLt.ExpectException @ExpectedErrorNumber = 52006;
     EXEC [compliance].[usp_CaptureCensusSnapshot] @TermCode = '2025FA', @AsOfDate = '2025-09-16';
 END;
-GO
-
-EXEC tSQLt.SetFakeViewOff @SchemaName = N'core';
 GO

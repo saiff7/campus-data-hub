@@ -113,3 +113,18 @@ BEGIN
     );
 END;
 GO
+
+-- The row-level security policy schema-binds compliance.CensusSnapshotEnrollment, so tSQLt cannot
+-- rename (fake) that table while the policy exists. Tests that fake it drop the policy first,
+-- inside tSQLt's test transaction, which rolls the drop back. Refuses to run outside a
+-- transaction so the policy can never be removed for good.
+CREATE PROCEDURE [IntegrationTestHelpers].[DropProgramScopePolicyForTest]
+AS
+BEGIN
+    IF @@TRANCOUNT = 0
+        THROW 59001, N'DropProgramScopePolicyForTest must run inside a test transaction.', 1;
+
+    IF OBJECT_ID(N'security.ProgramScopePolicy') IS NOT NULL
+        DROP SECURITY POLICY [security].[ProgramScopePolicy];
+END;
+GO

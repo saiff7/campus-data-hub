@@ -89,6 +89,7 @@ CREATE PROCEDURE [ReportingTests].[test the census report refuses a term without
 AS
 BEGIN
     EXEC tSQLt.FakeTable @TableName = N'compliance.CensusSnapshot';
+    EXEC [IntegrationTestHelpers].[DropProgramScopePolicyForTest];
     EXEC tSQLt.FakeTable @TableName = N'compliance.CensusSnapshotEnrollment';
 
     EXEC tSQLt.ExpectException @ExpectedErrorNumber = 52201;
@@ -100,6 +101,7 @@ CREATE PROCEDURE [ReportingTests].[test the census view reads only the current r
 AS
 BEGIN
     EXEC tSQLt.FakeTable @TableName = N'compliance.CensusSnapshot';
+    EXEC [IntegrationTestHelpers].[DropProgramScopePolicyForTest];
     EXEC tSQLt.FakeTable @TableName = N'compliance.CensusSnapshotEnrollment';
     EXEC tSQLt.FakeTable @TableName = N'compliance.CensusRuleVersion';
 

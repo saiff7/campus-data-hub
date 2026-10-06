@@ -464,6 +464,41 @@ WHERE NOT EXISTS (
     WHERE t.[ScheduleCode] = s.[ScheduleCode] AND t.[ExtractTypeCode] = s.[ExtractTypeCode]
 );
 
+------------------------------------------------------------------------------------------
+DECLARE @ManagedRole TABLE (
+    [RoleName]  NVARCHAR (128) NOT NULL,
+    [Purpose]   NVARCHAR (400) NOT NULL,
+    [DataClass] VARCHAR (30)   NOT NULL,
+    PRIMARY KEY ([RoleName])
+);
+
+INSERT INTO @ManagedRole ([RoleName], [Purpose], [DataClass])
+VALUES
+    (N'role_integration_service', N'Pipeline service account and Data Operations analysts who work exceptions.', 'CONFIDENTIAL'),
+    (N'role_enrollment_reporter', N'Registrar and Enrollment Management.', 'CONFIDENTIAL_STUDENT'),
+    (N'role_financial_aid_reporter', N'Financial Aid.', 'CONFIDENTIAL_FINANCIAL'),
+    (N'role_student_accounts_reporter', N'Student Accounts (Bursar).', 'CONFIDENTIAL_FINANCIAL'),
+    (N'role_ir_analyst', N'Institutional Research, leadership analytics and the Power BI dataset.', 'MASKED_AGGREGATE'),
+    (N'role_program_coordinator', N'Program coordinators: masked census roster for their own programs.', 'MASKED_ROW_FILTERED'),
+    (N'role_auditor', N'Read-only review of audit, extract and permission history.', 'AUDIT_METADATA');
+
+UPDATE t
+SET t.[Purpose] = s.[Purpose],
+    t.[DataClass] = s.[DataClass],
+    t.[UpdatedAtUtc] = @NowUtc
+FROM [security].[ManagedRole] AS t
+INNER JOIN @ManagedRole AS s ON t.[RoleName] = s.[RoleName]
+WHERE EXISTS (
+    SELECT s.[Purpose], s.[DataClass]
+    EXCEPT
+    SELECT t.[Purpose], t.[DataClass]
+);
+
+INSERT INTO [security].[ManagedRole] ([RoleName], [Purpose], [DataClass])
+SELECT s.[RoleName], s.[Purpose], s.[DataClass]
+FROM @ManagedRole AS s
+WHERE NOT EXISTS (SELECT 1 FROM [security].[ManagedRole] AS t WHERE t.[RoleName] = s.[RoleName]);
+
 -- noqa: enable=RF01
 
 COMMIT TRANSACTION;

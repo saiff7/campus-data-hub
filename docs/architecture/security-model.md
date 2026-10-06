@@ -20,7 +20,11 @@ compliant; only an institution's operated environment can.
    overrides any grant.
 3. **Roles, not users.** Grants go to roles in the DACPAC. People and service accounts become
    members through `security.usp_GrantRoleMembership`, which only accepts the roles listed in
-   `security.ManagedRole` (never `db_owner` or other fixed roles) and records a ticket reference.
+   `security.ManagedRole` (never `db_owner`, other fixed roles or `role_security_admin`) and
+   records a ticket reference. The procedure borrows no privilege. `role_security_admin` holds
+   `ALTER` on each department role, which permits membership changes only, so the audit records
+   the real caller. An administrator could use that permission directly without the procedure;
+   the DDL trigger still records it (see the access-request runbook).
 4. **Masking for broad audiences.** Leadership, IR and Power BI use `security.vw_StudentMasked`
    and the `bi` star schema. These use a random surrogate `StudentKey` and `MaskedStudentId`
    (`S0000123`), never the SIS ID, name, birth date or contact data. Surrogates come from
@@ -67,6 +71,7 @@ specified matrix]` fails on any difference, including an extra grant.
 | | EXECUTE | `compliance.usp_GenerateExtract`, `compliance.usp_ApproveExtract`, `compliance.usp_GetExtractForExport`, `compliance.usp_VerifyCensusSnapshot` |
 | `role_program_coordinator` | SELECT | `reporting.vw_ProgramCensusRoster` |
 | `role_security_admin` | EXECUTE | `security.usp_GrantRoleMembership`, `security.usp_RevokeRoleMembership`, `security.usp_SetProgramScope` |
+| | ALTER (role) | the seven department roles (`role_integration_service` … `role_auditor`, not `role_security_admin`) |
 | | SELECT | `security.UserProgramScope`, `security.vw_RolePermissionMatrix`, `audit.AccessEvent`, `audit.PermissionChangeEvent` |
 | `role_auditor` | SELECT (schema) | `audit` |
 | | SELECT | `security.vw_RolePermissionMatrix`, `compliance.ExtractRun`, `compliance.ExtractControlTotal`, `compliance.CensusSnapshot`, `dq.vw_DataQualityScorecard` |
@@ -108,6 +113,11 @@ legitimate educational interest, which is the FERPA test.
 - The security policy `security.ProgramScopePolicy` applies the predicate as a **filter** on
   `compliance.CensusSnapshotEnrollment`. No block predicate is needed, because nobody can write
   to the table and triggers make it immutable.
+
+**Testing consequence.** The policy schema-binds the table, so tSQLt cannot rename (fake) it.
+Tests that fake it call `IntegrationTestHelpers.DropProgramScopePolicyForTest`, which drops the
+policy inside the test transaction (rolled back afterwards) and refuses to run outside one. The
+row-level security test itself uses the real tables, because a fake would carry no policy.
 
 **Why only this one table.** The census roster is the one product shared with a role whose
 scope differs per member. Department roles see their whole department's data, which the grants
