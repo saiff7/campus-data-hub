@@ -7,5 +7,7 @@ the seeds so each declares its own variables in its own batch.
 GO
 :r ./reference/Seed/integration_reference_seed.sql
 GO
+:r ./reference/Seed/reporting_reference_seed.sql
+GO
 :r ./dq/Seed/dq_rule_seed.sql
 GO

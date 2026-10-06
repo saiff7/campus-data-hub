@@ -43,6 +43,12 @@ IF @Actual <> 10 INSERT INTO @Failure VALUES (N'Academic terms', CONCAT(N'expect
 SELECT @Actual = COUNT(*) FROM [reference].[ProgramCrosswalk];
 IF @Actual <> 9 INSERT INTO @Failure VALUES (N'Program crosswalk', CONCAT(N'expected 9, found ', @Actual));
 
+SELECT @Actual = COUNT(*) FROM [reference].[AidFund];
+IF @Actual <> 6 INSERT INTO @Failure VALUES (N'Aid funds', CONCAT(N'expected 6, found ', @Actual));
+
+SELECT @Actual = COUNT(*) FROM [reference].[AgingBucket];
+IF @Actual <> 5 INSERT INTO @Failure VALUES (N'Aging buckets', CONCAT(N'expected 5, found ', @Actual));
+
 SELECT @Actual = COUNT(*) FROM [reference].[ExceptionReason] WHERE [IsActive] = 1;
 IF @Actual <> 16 INSERT INTO @Failure VALUES (N'Exception reasons', CONCAT(N'expected 16, found ', @Actual));
 
@@ -91,6 +97,17 @@ LEFT JOIN [SourceSystems].[J1Sim].[AcademicProgram] AS p
 WHERE p.[ProgramCode] IS NULL;
 IF @Actual <> 0
     INSERT INTO @Failure VALUES (N'Program catalog agreement', CONCAT(@Actual, N' crosswalk rows have no matching J1-Sim program'));
+
+SELECT @Actual = COUNT(*)
+FROM (
+    SELECT p.[ProgramCode], p.[ProgramName], p.[CredentialLevel], p.[CipCode], p.[RequiredCredits], p.[IsActive]
+    FROM [reference].[AcademicProgram] AS p
+    EXCEPT
+    SELECT j.[ProgramCode], j.[ProgramName], j.[CredentialLevel], j.[CipCode], j.[RequiredCredits], j.[IsActive]
+    FROM [SourceSystems].[J1Sim].[AcademicProgram] AS j
+) AS mismatch;
+IF @Actual <> 0 OR (SELECT COUNT(*) FROM [reference].[AcademicProgram]) <> (SELECT COUNT(*) FROM [SourceSystems].[J1Sim].[AcademicProgram])
+    INSERT INTO @Failure VALUES (N'Reporting program catalog agreement', N'reference.AcademicProgram differs from J1-Sim');
 
 -- Edge cases (identifiers documented in pipelines/campus_ops/generators/edge_cases.py) ---
 SELECT @Actual = COUNT(*)
