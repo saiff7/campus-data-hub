@@ -101,10 +101,20 @@ jobs:
           name: tsqlt-results
           path: out/tsqlt-results.xml
           if-no-files-found: ignore
-      - name: Install and run the SQL Server Agent nightly job
+      - name: Install the SQL Server Agent jobs and run the nightly job
         run: |
           make agent-install
           make agent-run
+      - name: Run the census, daily and weekly extract jobs through Agent
+        run: |
+          make agent-run JOB="CampusDataOps - Census and Compliance"
+          make agent-run JOB="CampusDataOps - Daily Operational Reports"
+          make agent-run JOB="CampusDataOps - Weekly Quality Report"
+      - name: Export a public, suppressed IPEDS extract and check its manifest
+        run: |
+          run_id=$(uv run python -m campus_ops.cli generate-extract --type IPEDS_FE --period 2025FA | python3 -c "import json,sys; print(json.load(sys.stdin)['extract_run_id'])")
+          make export RUN="$run_id" PUBLIC=1
+          python3 -c "import json,glob; m=json.load(open(glob.glob('sample-output/extracts/*.manifest.json')[0])); assert m['suppression'] and m['sha256'], m"
       - name: Rerun the pipeline from Python (must succeed and reconcile)
         run: make nightly
       - name: Smoke test after integration

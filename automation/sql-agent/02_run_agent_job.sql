@@ -1,13 +1,15 @@
 /*
-Starts the nightly integration Agent job and waits for it to finish, failing if the job fails
-or does not finish within 10 minutes. Used by `make agent-run` and CI; the job history and
-audit tables hold the details.
+Starts an Agent job and waits for it to finish, failing if the job fails or does not finish
+within 10 minutes. Used by `make agent-run` (JOB= selects the job; the nightly integration job
+by default) and CI; the job history and audit tables hold the details.
+
+    sqlcmd ... -v JobName="CampusDataOps - Nightly Integration" -i 02_run_agent_job.sql
 */
 SET NOCOUNT ON;
 
 USE [msdb];
 
-DECLARE @JobName SYSNAME = N'CampusDataOps - Nightly Integration';
+DECLARE @JobName SYSNAME = N'$(JobName)';
 DECLARE @StartedAt DATETIME = DATEADD(SECOND, -1, GETDATE());
 DECLARE @Deadline DATETIME = DATEADD(MINUTE, 10, GETDATE());
 DECLARE @HistoryId INT;
@@ -33,7 +35,7 @@ BEGIN
 END;
 
 IF @HistoryId IS NULL
-    THROW 50950, N'The nightly integration job did not finish within 10 minutes.', 1;
+    THROW 50950, N'The Agent job did not finish within 10 minutes.', 1;
 
 SELECT @RunStatus = h.[run_status], @Message = h.[message]
 FROM [dbo].[sysjobhistory] AS h
@@ -55,4 +57,4 @@ ORDER BY h.[instance_id];
 IF @RunStatus <> 1
     THROW 50951, @Message, 1;
 
-PRINT N'The nightly integration job succeeded.';
+PRINT CONCAT(@JobName, N' succeeded.');

@@ -119,7 +119,12 @@ def _extract_command(args: argparse.Namespace) -> int:
                 )
                 return 1
             return 0
-        run = export.fetch(connection, args.run)
+        try:
+            run = export.fetch(connection, args.run)
+        except pyodbc.Error as error:
+            # Refusals (unknown or unsuccessful run, missing role) are audited by the database.
+            print(f"export refused by the database: {error.args[1]}", file=sys.stderr)
+            return 1
         out_dir = args.out or (PUBLIC_EXPORT_DIR if args.public else DEFAULT_EXPORT_DIR)
         try:
             csv_path, manifest_path = export.write(run, out_dir, public=args.public)

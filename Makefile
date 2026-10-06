@@ -129,13 +129,17 @@ export: ## Write a stored extract run to out/extracts: make export RUN=<id> [PUB
 	@test -n "$(RUN)" || { echo "Usage: make export RUN=<extract run id> [PUBLIC=1]"; exit 1; }
 	$(PY_RUN) campus_ops.cli export --run $(RUN) $(if $(filter 1,$(PUBLIC)),--public,)
 
+AGENT_JOB_SCRIPTS := 01_create_nightly_integration_job.sql 03_create_daily_reports_job.sql \
+	04_create_weekly_quality_job.sql 05_create_census_compliance_job.sql
+JOB ?= CampusDataOps - Nightly Integration
+
 .PHONY: agent-install
-agent-install: ## Create or replace the SQL Server Agent nightly integration job
-	$(SQLCMD_RUN) -d msdb -i automation/sql-agent/01_create_nightly_integration_job.sql
+agent-install: ## Create or replace the SQL Server Agent jobs (nightly, daily reports, weekly quality, census)
+	@for script in $(AGENT_JOB_SCRIPTS); do $(SQLCMD_RUN) -d msdb -i "automation/sql-agent/$$script"; done
 
 .PHONY: agent-run
-agent-run: ## Start the Agent job, wait for it and fail if it fails
-	$(SQLCMD_RUN) -d msdb -i automation/sql-agent/02_run_nightly_integration_job.sql
+agent-run: ## Start an Agent job, wait and fail if it fails: make agent-run [JOB="CampusDataOps - Daily Operational Reports"]
+	$(SQLCMD_RUN) -d msdb -v JobName="$(JOB)" -i automation/sql-agent/02_run_agent_job.sql
 
 .PHONY: reset-ops
 reset-ops: ## DEVELOPMENT ONLY: delete all CampusDataOps operational data (requires CONFIRM=1)
