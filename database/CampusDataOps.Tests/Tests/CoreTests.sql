@@ -51,7 +51,7 @@ BEGIN
     INTO #Actual
     FROM [core].[vw_Enrollment] AS e;
 
-    SELECT TOP (0) a.* INTO #Expected FROM #Actual AS a;
+    SELECT TOP (0) a.[EnrollmentId], a.[IsCountedAtCensus], a.[IsRegisteredByCensus], a.[IsAttempted] INTO #Expected FROM #Actual AS a;
     INSERT INTO #Expected ([EnrollmentId], [IsCountedAtCensus], [IsRegisteredByCensus], [IsAttempted])
     VALUES (1, 1, 1, 1), (2, 0, 0, 1), (3, 0, 1, 0), (4, 1, 1, 0), (5, 1, 1, 1);
 
@@ -72,7 +72,7 @@ BEGIN
     EXEC [CoreTests].[AddEnrollment] 4, 'REGISTERED', '2026-12-01', '2026-12-01', @IdNumber = 2400002, @TermCode = '2027SP';
 
     SELECT c.[IdNumber], c.[TermCode], c.[EntryStatus] INTO #Actual FROM [core].[vw_StudentTermCensus] AS c;
-    SELECT TOP (0) a.* INTO #Expected FROM #Actual AS a;
+    SELECT TOP (0) a.[IdNumber], a.[TermCode], a.[EntryStatus] INTO #Expected FROM #Actual AS a;
     INSERT INTO #Expected ([IdNumber], [TermCode], [EntryStatus])
     VALUES
         (2400001, '2026FA', 'ENTERING'), (2400001, '2027SP', 'CONTINUING'),
@@ -92,7 +92,7 @@ BEGIN
     EXEC [CoreTests].[AddEnrollment] 3, 'REGISTERED', '2026-08-01', '2026-08-01', @IdNumber = 2400003;
 
     SELECT c.[IdNumber], c.[AgeAtCensus] INTO #Actual FROM [core].[vw_StudentTermCensus] AS c;
-    SELECT TOP (0) a.* INTO #Expected FROM #Actual AS a;
+    SELECT TOP (0) a.[IdNumber], a.[AgeAtCensus] INTO #Expected FROM #Actual AS a;
     INSERT INTO #Expected ([IdNumber], [AgeAtCensus]) VALUES (2400001, 20), (2400002, 19), (2400003, 18);
 
     EXEC tSQLt.AssertEqualsTable @Expected = N'#Expected', @Actual = N'#Actual';
@@ -105,7 +105,7 @@ BEGIN
     EXEC [CoreTests].[AddEnrollment] 1, 'REGISTERED', '2026-08-01', '2026-08-01', @IdNumber = 2499999;
 
     SELECT c.[IdNumber], c.[HasStudentRecord], c.[EntryStatus], c.[CensusCredits] INTO #Actual FROM [core].[vw_StudentTermCensus] AS c;
-    SELECT TOP (0) a.* INTO #Expected FROM #Actual AS a;
+    SELECT TOP (0) a.[IdNumber], a.[HasStudentRecord], a.[EntryStatus], a.[CensusCredits] INTO #Expected FROM #Actual AS a;
     INSERT INTO #Expected ([IdNumber], [HasStudentRecord], [EntryStatus], [CensusCredits]) VALUES (2499999, 0, NULL, 3.0);
 
     EXEC tSQLt.AssertEqualsTable @Expected = N'#Expected', @Actual = N'#Actual';
@@ -120,7 +120,7 @@ BEGIN
     VALUES (1, 'CIS.AS', '2025-06-30'), (2, 'CIS.AS', '2025-07-01'), (3, 'CIS.AS', '2026-06-30');
 
     SELECT c.[CredentialAwardedId], c.[ReportingYear] INTO #Actual FROM [core].[vw_Credential] AS c;
-    SELECT TOP (0) a.* INTO #Expected FROM #Actual AS a;
+    SELECT TOP (0) a.[CredentialAwardedId], a.[ReportingYear] INTO #Expected FROM #Actual AS a;
     INSERT INTO #Expected ([CredentialAwardedId], [ReportingYear])
     VALUES (1, '2024-2025'), (2, '2025-2026'), (3, '2025-2026');
 

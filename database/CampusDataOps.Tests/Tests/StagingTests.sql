@@ -278,7 +278,7 @@ BEGIN
     EXEC [staging].[usp_StageJ1Credentials] @BatchId = 11, @RowsAffected = @SecondRun OUTPUT;
 
     SELECT c.[CredentialAwardedId], c.[AwardedDate], c.[LastStagedBatchId] INTO #Actual FROM [staging].[CredentialAwarded] AS c;
-    SELECT TOP (0) a.* INTO #Expected FROM #Actual AS a;
+    SELECT TOP (0) a.[CredentialAwardedId], a.[AwardedDate], a.[LastStagedBatchId] INTO #Expected FROM #Actual AS a;
     INSERT INTO #Expected ([CredentialAwardedId], [AwardedDate], [LastStagedBatchId])
     VALUES (501, '2025-05-22', 10), (502, '2026-05-21', 10);
 
