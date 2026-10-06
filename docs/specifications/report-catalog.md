@@ -65,7 +65,7 @@ Rules shared by every report:
 | Owner and audience | Student Accounts (owner); Financial Aid; leadership in aggregate only |
 | Purpose | Shows how much each student owes and how long it has been due, for collections and for holds |
 | Objects | `reporting.fn_StudentAccountAging(@AsOfDate)`; `reporting.vw_StudentAccountAging` (as of today); `reporting.usp_ReportAccountAging @AsOfDate = today`; extract type `ACCOUNT_AGING` |
-| Grain | One row per student with at least one transaction posted on or before the as-of date |
+| Grain | One row per student with at least one transaction posted on or before the as-of date. The procedure omits students whose net balance is exactly zero; the function and view keep them |
 | Measures | `NetBalance`: sum of every amount posted on or before the as-of date (charges and refunds positive, payments and aid credits negative; adjustments either sign). **Debits** are positive amounts; their due date is `DueDate`, or `PostedDate` when the source has none (refunds and adjustments). **Credits** (negative amounts) are applied to debits oldest due date first, then by transaction id. **Assumption:** first-in-first-out application, because the source does not record which charge a payment paid. Each debit's unpaid remainder is aged by days past due on the as-of date into the governed buckets in `reference.AgingBucket`: `CURRENT` (not yet due, ≤ 0 days), `D001_030`, `D031_060`, `D061_090` and `D091_PLUS`. `CreditBalance`: credits left over after every debit is paid, shown as a positive amount |
 | Invariant | `CURRENT + D001_030 + D031_060 + D061_090 + D091_PLUS − CreditBalance = NetBalance` for every row |
 | As-of behavior | Parameterized as-of date; transactions posted after it are ignored |
