@@ -118,6 +118,17 @@ recover: ## Resume a failed run: make recover FAILED_BATCH=<id> AT=<STEP>
 	@test -n "$(FAILED_BATCH)" -a -n "$(AT)" || { echo "Usage: make recover FAILED_BATCH=<batch id> AT=<step code>"; exit 1; }
 	$(PY_RUN) campus_ops.cli recover --failed-batch $(FAILED_BATCH) --at $(AT)
 
+.PHONY: extracts
+extracts: ## Run the CENSUS, DAILY and WEEKLY extract schedules now (same procedure as the Agent jobs)
+	$(PY_RUN) campus_ops.cli run-schedule --code CENSUS
+	$(PY_RUN) campus_ops.cli run-schedule --code DAILY
+	$(PY_RUN) campus_ops.cli run-schedule --code WEEKLY
+
+.PHONY: export
+export: ## Write a stored extract run to out/extracts: make export RUN=<id> [PUBLIC=1 for sample-output]
+	@test -n "$(RUN)" || { echo "Usage: make export RUN=<extract run id> [PUBLIC=1]"; exit 1; }
+	$(PY_RUN) campus_ops.cli export --run $(RUN) $(if $(filter 1,$(PUBLIC)),--public,)
+
 .PHONY: agent-install
 agent-install: ## Create or replace the SQL Server Agent nightly integration job
 	$(SQLCMD_RUN) -d msdb -i automation/sql-agent/01_create_nightly_integration_job.sql

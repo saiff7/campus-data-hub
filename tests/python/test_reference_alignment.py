@@ -60,13 +60,9 @@ def test_program_catalog_matches_seed() -> None:
 
 def test_reporting_program_catalog_matches_generator() -> None:
     reporting_seed = SEED.with_name("reporting_reference_seed.sql").read_text()
-    match = re.search(
-        r"INSERT INTO @AcademicProgram\b.*?VALUES(.*?);", reporting_seed, re.DOTALL
-    )
+    match = re.search(r"INSERT INTO @AcademicProgram\b.*?VALUES(.*?);", reporting_seed, re.DOTALL)
     assert match, "no VALUES block for @AcademicProgram"
-    seeded = [
-        [row[0], row[1], row[2], row[3], row[4], row[7]] for row in _tuples(match.group(1))
-    ]
+    seeded = [[row[0], row[1], row[2], row[3], row[4], row[7]] for row in _tuples(match.group(1))]
     expected = [
         [
             p.j1_code,

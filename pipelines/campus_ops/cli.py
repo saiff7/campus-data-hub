@@ -6,9 +6,14 @@ import json
 import logging
 import sys
 from collections.abc import Sequence
+from pathlib import Path
+
+import pyodbc
 
 from campus_ops.config import get_settings
 from campus_ops.db import connect
+from campus_ops.extracts import export
+from campus_ops.extracts.contracts import CONTRACTS
 from campus_ops.generators.dataset import generate_sources
 from campus_ops.generators.edge_cases import EDGE_CASES
 from campus_ops.logging_config import configure_logging
@@ -21,6 +26,9 @@ from campus_ops.pipeline import (
     run_summary,
 )
 from campus_ops.source_writer import replace_source_data
+
+DEFAULT_EXPORT_DIR = Path("out/extracts")
+PUBLIC_EXPORT_DIR = Path("sample-output/extracts")
 
 log = logging.getLogger("campus_ops.cli")
 
@@ -62,7 +70,64 @@ def _parser() -> argparse.ArgumentParser:
         "reset-ops", help="DEVELOPMENT ONLY: delete all CampusDataOps operational data"
     )
     reset.add_argument("--confirm", action="store_true", help="required; confirms the deletion")
+    generate = commands.add_parser(
+        "generate-extract", help="generate a checked extract run in the database"
+    )
+    generate.add_argument("--type", choices=sorted(CONTRACTS), required=True)
+    generate.add_argument(
+        "--period", help="term code, academic year (2025-2026) or date; some types need none"
+    )
+    exporter = commands.add_parser(
+        "export", help="write a stored extract run to CSV and a manifest (audited)"
+    )
+    exporter.add_argument("--run", type=int, required=True, help="extract run id")
+    exporter.add_argument(
+        "--public",
+        action="store_true",
+        help=f"suppressed copy of an aggregate extract into {PUBLIC_EXPORT_DIR}",
+    )
+    exporter.add_argument("--out", type=Path, help=f"output folder (default {DEFAULT_EXPORT_DIR})")
+    schedule = commands.add_parser(
+        "run-schedule", help="run an Agent extract schedule now (same procedure as the job)"
+    )
+    schedule.add_argument("--code", choices=("DAILY", "WEEKLY", "CENSUS"), required=True)
     return parser
+
+
+def _extract_command(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    with connect(settings, settings.ops_database, autocommit=True) as connection:
+        if args.command == "generate-extract":
+            run_id = export.generate(connection, args.type, args.period)
+            print(json.dumps({"extract_run_id": run_id}))
+            return 0
+        if args.command == "run-schedule":
+            cursor = connection.cursor()
+            cursor.execute(
+                "EXEC [compliance].[usp_RunScheduledExtracts] @ScheduleCode = ?;", args.code
+            )
+            columns = [c[0] for c in cursor.description]
+            print(json.dumps([dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]))
+            # The procedure raises after its result set when any item failed; pyodbc reports
+            # that error only when the next result set is requested.
+            try:
+                while cursor.nextset():
+                    pass
+            except pyodbc.Error as error:
+                print(
+                    f"schedule {args.code} had failures (SQLSTATE {error.args[0]})", file=sys.stderr
+                )
+                return 1
+            return 0
+        run = export.fetch(connection, args.run)
+        out_dir = args.out or (PUBLIC_EXPORT_DIR if args.public else DEFAULT_EXPORT_DIR)
+        try:
+            csv_path, manifest_path = export.write(run, out_dir, public=args.public)
+        except export.ExtractError as error:
+            print(f"export refused: {error}", file=sys.stderr)
+            return 1
+        print(json.dumps({"csv": str(csv_path), "manifest": str(manifest_path)}))
+    return 0
 
 
 def _pipeline_command(args: argparse.Namespace) -> int:
@@ -103,6 +168,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command in {"nightly", "recover", "run-summary", "reset-ops"}:
         return _pipeline_command(args)
+
+    if args.command in {"generate-extract", "export", "run-schedule"}:
+        return _extract_command(args)
 
     if args.command == "edge-cases":
         print(
