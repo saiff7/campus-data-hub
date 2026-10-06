@@ -1,0 +1,76 @@
+table FactCensusEnrollment
+	lineageTag: a3d61066-8d4f-54bc-8042-814e6a41c8aa
+
+	column CensusSnapshotId
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 1c0877ab-1441-55c4-bcc2-539f39c746cd
+		summarizeBy: none
+		sourceColumn: CensusSnapshotId
+
+	column TermCode
+		dataType: string
+		lineageTag: deba226f-2fe6-57e9-a537-715772668e0d
+		summarizeBy: none
+		sourceColumn: TermCode
+
+	column StudentKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 47352a70-2d07-5852-8034-fa855eea87f7
+		summarizeBy: none
+		sourceColumn: StudentKey
+
+	column ProgramCode
+		dataType: string
+		lineageTag: 76c2006d-5b46-5dec-8dea-3af02a75c946
+		summarizeBy: none
+		sourceColumn: ProgramCode
+
+	column CensusCredits
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: abb29ad9-c4d0-5d0f-8e33-8e99542a0a3f
+		summarizeBy: none
+		sourceColumn: CensusCredits
+
+	column AttendanceIntensity
+		dataType: string
+		lineageTag: 3614ceff-efdc-53a6-9ba9-c5e5f06f04b8
+		summarizeBy: none
+		sourceColumn: AttendanceIntensity
+
+	column EntryStatus
+		dataType: string
+		lineageTag: 053e6666-08a8-5b3e-a57b-99967c73843b
+		summarizeBy: none
+		sourceColumn: EntryStatus
+
+	column ResidencyCode
+		dataType: string
+		lineageTag: 2e6f3212-d8c4-5bc6-a8b9-0b4b13b7f5ee
+		summarizeBy: none
+		sourceColumn: ResidencyCode
+
+	column IsCensusIncluded
+		dataType: boolean
+		lineageTag: 14e14621-2fe0-574d-aa9d-b0c9f6bc8a3f
+		summarizeBy: none
+		sourceColumn: IsCensusIncluded
+
+	column ExclusionReason
+		dataType: string
+		lineageTag: 4001a02a-81d7-58cf-b406-6f41255467e3
+		summarizeBy: none
+		sourceColumn: ExclusionReason
+
+	partition FactCensusEnrollment = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="FactCensusEnrollment"]}[Data]
+				in
+				    Data

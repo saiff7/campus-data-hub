@@ -1,0 +1,47 @@
+table DimDataQualityRule
+	lineageTag: e43dde83-62e3-5ebc-9e3d-75638b580c65
+
+	column RuleCode
+		dataType: string
+		lineageTag: 430df665-a907-5faf-9587-de1affcc7ab4
+		summarizeBy: none
+		sourceColumn: RuleCode
+
+	column Description
+		dataType: string
+		lineageTag: 5be3309b-be88-5a5b-a659-08c33003f2d9
+		summarizeBy: none
+		sourceColumn: Description
+
+	column EntityName
+		dataType: string
+		lineageTag: 4d2eb6b5-335a-5c39-b038-46bd30ae72ff
+		summarizeBy: none
+		sourceColumn: EntityName
+
+	column Severity
+		dataType: string
+		lineageTag: 507787f4-8efc-5b4d-9eb3-4d683fc77dfb
+		summarizeBy: none
+		sourceColumn: Severity
+
+	column OwnerDepartment
+		dataType: string
+		lineageTag: b7a1a8de-7ba2-5f62-adbf-ed21883acf89
+		summarizeBy: none
+		sourceColumn: OwnerDepartment
+
+	column IsActive
+		dataType: boolean
+		lineageTag: 3003a213-99b4-5bb6-84f1-bd2471a31591
+		summarizeBy: none
+		sourceColumn: IsActive
+
+	partition DimDataQualityRule = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="DimDataQualityRule"]}[Data]
+				in
+				    Data

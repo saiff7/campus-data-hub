@@ -1,0 +1,58 @@
+table DimDate
+	lineageTag: a30b8ec0-0c84-5af1-8886-ea0c528b855e
+
+	column Date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 0e1c5560-df99-50da-bf1d-ed0432aa2bc4
+		summarizeBy: none
+		sourceColumn: Date
+
+	column TermCode
+		dataType: string
+		lineageTag: 79dd3221-fef5-57f0-b38f-07efa5e8e009
+		summarizeBy: none
+		sourceColumn: TermCode
+
+	column DateKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 268fba43-52d8-5a45-8005-a30b20e05fba
+		summarizeBy: none
+		sourceColumn: DateKey
+
+	column CalendarYear
+		dataType: int64
+		formatString: 0
+		lineageTag: 5d5e986b-42bd-55a6-be4b-d136f63d7df9
+		summarizeBy: none
+		sourceColumn: CalendarYear
+
+	column MonthNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 03a840e0-c14e-51c8-bdb8-2cff7662f0b1
+		summarizeBy: none
+		sourceColumn: MonthNumber
+
+	column MonthName
+		dataType: string
+		lineageTag: 8c133480-abbc-5d97-af65-e03738dd357b
+		summarizeBy: none
+		sourceColumn: MonthName
+
+	column AcademicYear
+		dataType: string
+		lineageTag: e77125d3-121f-5c97-8af6-4753b046a667
+		summarizeBy: none
+		sourceColumn: AcademicYear
+
+	partition DimDate = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="DimDate"]}[Data]
+				in
+				    Data

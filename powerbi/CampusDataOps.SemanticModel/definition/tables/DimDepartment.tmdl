@@ -1,0 +1,23 @@
+table DimDepartment
+	lineageTag: b3fdf1f0-9616-59fe-88ea-edf2cad144e1
+
+	column DepartmentCode
+		dataType: string
+		lineageTag: 9058267a-fab6-5581-8c30-0a05e812f3cc
+		summarizeBy: none
+		sourceColumn: DepartmentCode
+
+	column DepartmentName
+		dataType: string
+		lineageTag: d165c7b7-4c2c-589f-8396-7d9485cc77e3
+		summarizeBy: none
+		sourceColumn: DepartmentName
+
+	partition DimDepartment = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="DimDepartment"]}[Data]
+				in
+				    Data

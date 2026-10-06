@@ -1,0 +1,33 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+ref table DataAsOf
+ref table DimDataQualityRule
+ref table DimDate
+ref table DimDepartment
+ref table DimExceptionReason
+ref table DimProgram
+ref table DimStudent
+ref table DimTerm
+ref table FactAccountBalance
+ref table FactAidAward
+ref table FactApplicationFunnel
+ref table FactCensusEnrollment
+ref table FactCourseOutcome
+ref table FactDataQualityResult
+ref table FactIntegrationException
+ref table FactIntegrationRun
+ref table FactJobStep
+ref table Measures
+
+ref role Leadership
+ref role 'Division - Business and Technology'
+ref role 'Division - Health Sciences'
+ref role 'Division - Human Services'
+ref role 'Division - Liberal Arts'
+ref role 'Division - Trades'

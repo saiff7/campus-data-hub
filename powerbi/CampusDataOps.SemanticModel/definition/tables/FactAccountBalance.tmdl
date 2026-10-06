@@ -1,0 +1,75 @@
+table FactAccountBalance
+	lineageTag: 9a6f1e66-5b01-54ee-a16d-a596558fbb35
+
+	column StudentKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 6bc0d484-9abc-578f-82b8-2b3d743319fd
+		summarizeBy: none
+		sourceColumn: StudentKey
+
+	column AsOfDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 00d76c7e-d795-5959-adc2-32f807038603
+		summarizeBy: none
+		sourceColumn: AsOfDate
+
+	column NetBalance
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: 95d52ad8-3030-5a1c-a9ae-a053d7c84b36
+		summarizeBy: none
+		sourceColumn: NetBalance
+
+	column CurrentAmount
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: 77e59752-cc9a-5cc4-81a9-4d94894ed049
+		summarizeBy: none
+		sourceColumn: CurrentAmount
+
+	column Days001To030
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: 20a0d800-b694-5a7a-806b-d26385b9bf17
+		summarizeBy: none
+		sourceColumn: Days001To030
+
+	column Days031To060
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: 271712c7-1c76-59fd-a452-b021b2aff105
+		summarizeBy: none
+		sourceColumn: Days031To060
+
+	column Days061To090
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: df4135ca-2770-5097-a439-b40d034d8a2c
+		summarizeBy: none
+		sourceColumn: Days061To090
+
+	column Days091Plus
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: 2e72a23c-4e6c-558d-ba7c-42b35628e0f4
+		summarizeBy: none
+		sourceColumn: Days091Plus
+
+	column CreditBalance
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: 40122c42-73fb-5e51-b548-0ca521c0ec1e
+		summarizeBy: none
+		sourceColumn: CreditBalance
+
+	partition FactAccountBalance = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="FactAccountBalance"]}[Data]
+				in
+				    Data

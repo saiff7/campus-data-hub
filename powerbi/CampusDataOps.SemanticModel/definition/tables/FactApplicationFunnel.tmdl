@@ -1,0 +1,42 @@
+table FactApplicationFunnel
+	lineageTag: 7ae0405a-7b11-5000-8ed3-ee9b746b59bb
+
+	column TermCode
+		dataType: string
+		lineageTag: 92c7a67d-3b92-51e8-8388-b5a342c47752
+		summarizeBy: none
+		sourceColumn: TermCode
+
+	column ProgramCode
+		dataType: string
+		lineageTag: 8b67592e-d42b-5ffe-950a-9f2947af32a3
+		summarizeBy: none
+		sourceColumn: ProgramCode
+
+	column ApplicationStatus
+		dataType: string
+		lineageTag: f6569397-ec2f-55ed-a1a2-fe35473f7365
+		summarizeBy: none
+		sourceColumn: ApplicationStatus
+
+	column StudentType
+		dataType: string
+		lineageTag: 1fed0466-a1cb-53fd-97bf-fd89597feab9
+		summarizeBy: none
+		sourceColumn: StudentType
+
+	column ApplicationCount
+		dataType: int64
+		formatString: 0
+		lineageTag: 61f6650e-98e5-5502-8aa5-dfdc79b34abe
+		summarizeBy: none
+		sourceColumn: ApplicationCount
+
+	partition FactApplicationFunnel = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="FactApplicationFunnel"]}[Data]
+				in
+				    Data

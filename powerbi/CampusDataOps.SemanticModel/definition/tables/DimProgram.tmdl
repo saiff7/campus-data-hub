@@ -1,0 +1,66 @@
+table DimProgram
+	lineageTag: 41f23cb6-28b8-589a-9acf-1533b2482717
+
+	column ProgramCode
+		dataType: string
+		lineageTag: 52e5328f-0b88-55a9-8b98-8253cf88b3ed
+		summarizeBy: none
+		sourceColumn: ProgramCode
+
+	column ProgramName
+		dataType: string
+		lineageTag: c5d5cd8c-d545-5873-b5da-d60d82a3b9ec
+		summarizeBy: none
+		sourceColumn: ProgramName
+
+	column CredentialLevel
+		dataType: string
+		lineageTag: c2f38725-ba16-5870-9fa9-9f8b6b48f5ab
+		summarizeBy: none
+		sourceColumn: CredentialLevel
+
+	column CipCode
+		dataType: string
+		lineageTag: 67c0fe1d-bbcf-5cce-bd52-9f6a2ae1f010
+		summarizeBy: none
+		sourceColumn: CipCode
+
+	column RequiredCredits
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: d0178d39-928f-5318-bd1e-ec16c0a3cbf7
+		summarizeBy: none
+		sourceColumn: RequiredCredits
+
+	column IpedsAwardLevel
+		dataType: string
+		lineageTag: a9db3a05-bd38-5950-8186-fa1db8840b0a
+		summarizeBy: none
+		sourceColumn: IpedsAwardLevel
+
+	column DivisionCode
+		dataType: string
+		lineageTag: 47f7d57e-8e72-59f8-b586-835d3050505e
+		summarizeBy: none
+		sourceColumn: DivisionCode
+
+	column DivisionName
+		dataType: string
+		lineageTag: 9f565684-d7ad-5535-a9e2-50afc2a0899a
+		summarizeBy: none
+		sourceColumn: DivisionName
+
+	column IsActive
+		dataType: boolean
+		lineageTag: 1a7507cd-1bfb-5999-b808-4b557bc6711a
+		summarizeBy: none
+		sourceColumn: IsActive
+
+	partition DimProgram = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="DimProgram"]}[Data]
+				in
+				    Data

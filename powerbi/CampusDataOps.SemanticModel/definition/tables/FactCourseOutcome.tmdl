@@ -1,0 +1,57 @@
+table FactCourseOutcome
+	lineageTag: e28b428d-87b1-5769-8e62-ceead197c349
+
+	column TermCode
+		dataType: string
+		lineageTag: 23b07bfe-7742-5303-a7bc-c658d6156db2
+		summarizeBy: none
+		sourceColumn: TermCode
+
+	column SubjectCode
+		dataType: string
+		lineageTag: 5e715bcc-24f0-5659-816d-794ff1082cd8
+		summarizeBy: none
+		sourceColumn: SubjectCode
+
+	column ProgramCode
+		dataType: string
+		lineageTag: 8fd9cc18-5ab6-594d-aea7-c3eb998852d2
+		summarizeBy: none
+		sourceColumn: ProgramCode
+
+	column AttemptedSections
+		dataType: int64
+		formatString: 0
+		lineageTag: a9723b0f-b929-5d0a-a0c5-7a8450e4150e
+		summarizeBy: none
+		sourceColumn: AttemptedSections
+
+	column GradedSections
+		dataType: int64
+		formatString: 0
+		lineageTag: d3e67829-2320-575d-b888-ebcd42a1be65
+		summarizeBy: none
+		sourceColumn: GradedSections
+
+	column SuccessfulSections
+		dataType: int64
+		formatString: 0
+		lineageTag: be90dd78-ed2b-5c2e-b62c-7ac197054dc1
+		summarizeBy: none
+		sourceColumn: SuccessfulSections
+
+	column AttemptedCredits
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: de0be762-fec2-54ca-b8dc-a8562858a7b8
+		summarizeBy: none
+		sourceColumn: AttemptedCredits
+
+	partition FactCourseOutcome = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="FactCourseOutcome"]}[Data]
+				in
+				    Data
