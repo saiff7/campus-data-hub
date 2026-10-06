@@ -106,6 +106,8 @@ BEGIN
             SET @RowsAffected += @StepRows;
             EXEC [staging].[usp_StageJ1AccountTransactions] @BatchId = @BatchId, @RowsAffected = @StepRows OUTPUT;
             SET @RowsAffected += @StepRows;
+            EXEC [staging].[usp_StageJ1Credentials] @BatchId = @BatchId, @RowsAffected = @StepRows OUTPUT;
+            SET @RowsAffected += @StepRows;
         END
         ELSE IF @StepCode = 'DATA_QUALITY'
             EXEC [dq].[usp_RunDataQualitySuite] @BatchId = @BatchId, @RowsAffected = @RowsAffected OUTPUT;

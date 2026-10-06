@@ -1,5 +1,5 @@
--- Lands J1-Sim people, enrollments, aid awards, account transactions and account control
--- totals changed at or after the previous watermark. Same contract as landing.usp_LoadSlateSim.
+-- Lands J1-Sim people, enrollments, aid awards, account transactions, account control totals
+-- and credential awards changed at or after the previous watermark. Same contract as landing.usp_LoadSlateSim.
 -- A control total is captured for every student-term with a changed transaction, computed
 -- over all of that student-term's source transactions.
 CREATE PROCEDURE [landing].[usp_LoadJ1Sim]
@@ -12,6 +12,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
+
+    DECLARE @CredentialWatermarkUtc DATETIME2 (3);
 
     -- RecordHash is SHA-256 over the row serialized with FOR JSON (INCLUDE_NULL_VALUES), which
     -- distinguishes NULL from empty and needs no delimiter escaping. The correlated subquery is
@@ -107,8 +109,31 @@ BEGIN
         ) AS h
         WHERE @PreviousWatermarkUtc IS NULL OR v.[SourceUpdatedAtUtc] >= @PreviousWatermarkUtc;
 
+        -- Credentials were added to the J1-Sim load in Part 3, after the source watermark had
+        -- already moved past their timestamps. Until the first credential has landed, read them
+        -- all; the hash comparison below keeps this safe to repeat.
+        SET @CredentialWatermarkUtc = CASE
+            WHEN EXISTS (SELECT 1 FROM [landing].[J1CredentialRaw]) THEN @PreviousWatermarkUtc
+        END;
+
+        SELECT
+            v.[CredentialAwardedId], v.[IdNumber], v.[ProgramCode], v.[TermCode], v.[AwardedDate],
+            v.[SourceUpdatedAtUtc], h.[RecordHash]
+        INTO #Credential
+        FROM [landing].[vw_SourceJ1Credential] AS v
+        CROSS APPLY ( -- noqa: ST05
+            SELECT HASHBYTES('SHA2_256', (
+                SELECT
+                    v.[CredentialAwardedId], v.[IdNumber], v.[ProgramCode],
+                    v.[TermCode], v.[AwardedDate]
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER, INCLUDE_NULL_VALUES
+            )) AS [RecordHash]
+        ) AS h
+        WHERE @CredentialWatermarkUtc IS NULL OR v.[SourceUpdatedAtUtc] >= @CredentialWatermarkUtc;
+
         SET @RowsRead = (SELECT COUNT(*) FROM #Person) + (SELECT COUNT(*) FROM #Enrollment) + (SELECT COUNT(*) FROM #Aid)
-            + (SELECT COUNT(*) FROM #Transaction) + (SELECT COUNT(*) FROM #ControlTotal);
+            + (SELECT COUNT(*) FROM #Transaction) + (SELECT COUNT(*) FROM #ControlTotal)
+            + (SELECT COUNT(*) FROM #Credential);
         SET @SourceWatermarkUtc = (
             SELECT MAX(w.[SourceUpdatedAtUtc])
             FROM (
@@ -119,9 +144,14 @@ BEGIN
                 SELECT a.[SourceUpdatedAtUtc] FROM #Aid AS a
                 UNION ALL
                 SELECT t.[SourceUpdatedAtUtc] FROM #Transaction AS t
+                UNION ALL
+                SELECT c.[SourceUpdatedAtUtc] FROM #Credential AS c
             ) AS w
         );
-        SET @SourceWatermarkUtc = COALESCE(@SourceWatermarkUtc, @PreviousWatermarkUtc, CAST('1900-01-01' AS DATETIME2 (3)));
+        -- A credential backfill reads rows older than the previous watermark; never move it back.
+        SET @SourceWatermarkUtc = COALESCE(
+            GREATEST(@SourceWatermarkUtc, @PreviousWatermarkUtc), CAST('1900-01-01' AS DATETIME2 (3))
+        );
         SET @RowsInserted = 0;
 
         BEGIN TRANSACTION;
@@ -219,6 +249,24 @@ BEGIN
             FROM [landing].[J1AccountControlTotal] AS r
             WHERE r.[IdNumber] = s.[IdNumber]
               AND r.[TermCode] = s.[TermCode]
+            ORDER BY r.[BatchId] DESC
+        ) AS latest
+        WHERE latest.[RecordHash] IS NULL OR latest.[RecordHash] <> s.[RecordHash];
+
+        SET @RowsInserted += @@ROWCOUNT;
+
+        INSERT INTO [landing].[J1CredentialRaw] (
+            [BatchId], [CredentialAwardedId], [IdNumber], [ProgramCode], [TermCode], [AwardedDate],
+            [SourceUpdatedAtUtc], [RecordHash], [RequestId]
+        )
+        SELECT
+            @BatchId AS [BatchId], s.[CredentialAwardedId], s.[IdNumber], s.[ProgramCode], s.[TermCode],
+            s.[AwardedDate], s.[SourceUpdatedAtUtc], s.[RecordHash], 'landing.vw_SourceJ1Credential' AS [RequestId]
+        FROM #Credential AS s
+        OUTER APPLY (
+            SELECT TOP (1) r.[RecordHash]
+            FROM [landing].[J1CredentialRaw] AS r
+            WHERE r.[CredentialAwardedId] = s.[CredentialAwardedId]
             ORDER BY r.[BatchId] DESC
         ) AS latest
         WHERE latest.[RecordHash] IS NULL OR latest.[RecordHash] <> s.[RecordHash];
