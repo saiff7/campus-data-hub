@@ -1,8 +1,9 @@
 -- Recomputes a census snapshot's row checksum and compares it with the stored one. Returns one
--- row; raises 52011 on a mismatch unless @ThrowOnMismatch = 0.
+-- row unless @ReturnResult = 0; raises 52011 on a mismatch unless @ThrowOnMismatch = 0.
 CREATE PROCEDURE [compliance].[usp_VerifyCensusSnapshot]
     @CensusSnapshotId INT,
     @ThrowOnMismatch  BIT = 1,
+    @ReturnResult     BIT = 1,
     @IsValid          BIT = NULL OUTPUT
 AS
 BEGIN
@@ -34,11 +35,12 @@ BEGIN
     SET @Recomputed = [compliance].[fn_CensusRowsChecksum](@Rows);
     SET @IsValid = CONVERT(BIT, CASE WHEN @Recomputed = @Stored THEN 1 ELSE 0 END);
 
-    SELECT
-        @CensusSnapshotId AS [CensusSnapshotId],
-        CONVERT(CHAR (64), @Stored, 2) AS [StoredChecksum],
-        CONVERT(CHAR (64), @Recomputed, 2) AS [RecomputedChecksum],
-        @IsValid AS [IsValid];
+    IF @ReturnResult = 1
+        SELECT
+            @CensusSnapshotId AS [CensusSnapshotId],
+            CONVERT(CHAR (64), @Stored, 2) AS [StoredChecksum],
+            CONVERT(CHAR (64), @Recomputed, 2) AS [RecomputedChecksum],
+            @IsValid AS [IsValid];
 
     IF @IsValid = 0 AND @ThrowOnMismatch = 1
     BEGIN

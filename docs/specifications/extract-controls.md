@@ -76,7 +76,7 @@ Each builder writes its controls into `compliance.ExtractControlTotal`:
 | **Reconciliation:** `ExpectedValue` is computed independently of the extract rows (for example, from the snapshot header or `core`), and `ActualValue` is computed from the rows | `FAIL` |
 | **Subtotal:** parts must add up to the total | `FAIL` |
 | **Rule:** a cited rule, for example 12-month headcount ≥ fall headcount | `FAIL` |
-| **Prior period:** `ActualValue` is compared with the same control in the latest earlier successful run of the same type. The allowed change is in `compliance.ControlThreshold` | `WARN` |
+| **Prior period:** `ActualValue` is compared with the same control in the latest earlier successful run of the same type; for term periods, the latest earlier term of the same term type (fall with fall). The allowed change is in `compliance.ControlThreshold` | `WARN` |
 
 `compliance.usp_ValidateExtractControlTotals` sets every outcome and the run's validation status:
 `FAILED` if any control failed, otherwise `WARNING` if any warned, otherwise `PASSED`. Failures

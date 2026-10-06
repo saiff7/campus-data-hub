@@ -161,6 +161,48 @@ FROM @MeasureDefinition AS s
 WHERE NOT EXISTS (SELECT 1 FROM [compliance].[MeasureDefinition] AS t WHERE t.[MeasureCode] = s.[MeasureCode]);
 
 
+-- Prior-period change limits: project assumptions for Institutional Research to tune.
+------------------------------------------------------------------------------------------
+DECLARE @ControlThreshold TABLE (
+    [ExtractTypeCode] VARCHAR (30)   NOT NULL,
+    [ControlCode]     VARCHAR (40)   NOT NULL,
+    [MaxChangePct]    DECIMAL (9, 2) NOT NULL,
+    PRIMARY KEY ([ExtractTypeCode], [ControlCode])
+);
+
+INSERT INTO @ControlThreshold ([ExtractTypeCode], [ControlCode], [MaxChangePct])
+VALUES
+    ('ENROLLMENT_CENSUS', 'INCLUDED_COUNT', 20.00),
+    ('AID_PACKAGING', 'OFFERED_TOTAL', 25.00),
+    ('ACCOUNT_AGING', 'NET_BALANCE_TOTAL', 25.00),
+    ('ACADEMIC_PROGRESS', 'DATA_ROW_COUNT', 30.00),
+    ('EXCEPTION_WORKLIST', 'DATA_ROW_COUNT', 50.00),
+    ('DQ_SCORECARD', 'FAILURES_TOTAL', 50.00),
+    ('IPEDS_FE', 'TOTAL_HEADCOUNT', 20.00),
+    ('IPEDS_E12', 'TOTAL_HEADCOUNT', 20.00),
+    ('IPEDS_C', 'AWARDS_TOTAL', 30.00),
+    ('IPEDS_SFA', 'GROUP_1_COHORT', 20.00);
+
+UPDATE t
+SET t.[MaxChangePct] = s.[MaxChangePct],
+    t.[UpdatedAtUtc] = @NowUtc
+FROM [compliance].[ControlThreshold] AS t
+INNER JOIN @ControlThreshold AS s ON t.[ExtractTypeCode] = s.[ExtractTypeCode] AND t.[ControlCode] = s.[ControlCode]
+WHERE EXISTS (
+    SELECT s.[MaxChangePct]
+    EXCEPT
+    SELECT t.[MaxChangePct]
+);
+
+INSERT INTO [compliance].[ControlThreshold] ([ExtractTypeCode], [ControlCode], [MaxChangePct])
+SELECT s.[ExtractTypeCode], s.[ControlCode], s.[MaxChangePct]
+FROM @ControlThreshold AS s
+WHERE NOT EXISTS (
+    SELECT 1 FROM [compliance].[ControlThreshold] AS t
+    WHERE t.[ExtractTypeCode] = s.[ExtractTypeCode] AND t.[ControlCode] = s.[ControlCode]
+);
+
+
 -- noqa: enable=RF01
 
 COMMIT TRANSACTION;

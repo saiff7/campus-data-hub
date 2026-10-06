@@ -47,13 +47,24 @@ DELETE FROM [landing].[J1AccountTransactionRaw];
 DELETE FROM [landing].[J1AccountControlTotal];
 DELETE FROM [landing].[DirectoryAccountRaw];
 DELETE FROM [landing].[J1CredentialRaw];
--- Census snapshots are immutable (ADR-003); only this development reset may remove them.
+-- Completed extract runs and census snapshots are immutable; only this development reset may
+-- remove them.
+ALTER TABLE [compliance].[ExtractControlTotal] DISABLE TRIGGER [trg_ExtractControlTotal_Immutable];
+ALTER TABLE [compliance].[ExtractRow] DISABLE TRIGGER [trg_ExtractRow_Immutable];
+ALTER TABLE [compliance].[ExtractRun] DISABLE TRIGGER [trg_ExtractRun_Immutable];
+DELETE FROM [compliance].[ExtractControlTotal];
+DELETE FROM [compliance].[ExtractRow];
+DELETE FROM [compliance].[ExtractRun];
+ALTER TABLE [compliance].[ExtractRun] ENABLE TRIGGER [trg_ExtractRun_Immutable];
+ALTER TABLE [compliance].[ExtractRow] ENABLE TRIGGER [trg_ExtractRow_Immutable];
+ALTER TABLE [compliance].[ExtractControlTotal] ENABLE TRIGGER [trg_ExtractControlTotal_Immutable];
 ALTER TABLE [compliance].[CensusSnapshotEnrollment] DISABLE TRIGGER [trg_CensusSnapshotEnrollment_Immutable];
 ALTER TABLE [compliance].[CensusSnapshot] DISABLE TRIGGER [trg_CensusSnapshot_Immutable];
 DELETE FROM [compliance].[CensusSnapshotEnrollment];
 DELETE FROM [compliance].[CensusSnapshot];
 ALTER TABLE [compliance].[CensusSnapshot] ENABLE TRIGGER [trg_CensusSnapshot_Immutable];
 ALTER TABLE [compliance].[CensusSnapshotEnrollment] ENABLE TRIGGER [trg_CensusSnapshotEnrollment_Immutable];
+DELETE FROM [audit].[AccessEvent];
 DELETE FROM [audit].[ErrorLog];
 DELETE FROM [audit].[BatchStep];
 UPDATE br SET br.[ParentBatchId] = NULL, br.[RecoveryOfBatchId] = NULL FROM [audit].[BatchRun] AS br;

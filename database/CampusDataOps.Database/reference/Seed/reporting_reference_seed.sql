@@ -243,6 +243,227 @@ SELECT s.[StandingCode], s.[Description], s.[MinCumulativeGpa], s.[MaxCumulative
 FROM @AcademicStandingRule AS s
 WHERE NOT EXISTS (SELECT 1 FROM [reference].[AcademicStandingRule] AS t WHERE t.[StandingCode] = s.[StandingCode]);
 
+------------------------------------------------------------------------------------------
+DECLARE @ExtractStatus TABLE (
+    [ExtractStatusCode] VARCHAR (15)   NOT NULL,
+    [Description]       NVARCHAR (200) NOT NULL,
+    PRIMARY KEY ([ExtractStatusCode])
+);
+
+INSERT INTO @ExtractStatus ([ExtractStatusCode], [Description])
+VALUES
+    ('GENERATING', N'Rows and controls are being written.'),
+    ('SUCCEEDED', N'Rows, controls and checksum are stored; the run is immutable.'),
+    ('FAILED', N'The builder failed; the run records the error and has no rows.');
+
+UPDATE t
+SET t.[Description] = s.[Description],
+    t.[UpdatedAtUtc] = @NowUtc
+FROM [reference].[ExtractStatus] AS t
+INNER JOIN @ExtractStatus AS s ON t.[ExtractStatusCode] = s.[ExtractStatusCode]
+WHERE EXISTS (
+    SELECT s.[Description]
+    EXCEPT
+    SELECT t.[Description]
+);
+
+INSERT INTO [reference].[ExtractStatus] ([ExtractStatusCode], [Description])
+SELECT s.[ExtractStatusCode], s.[Description]
+FROM @ExtractStatus AS s
+WHERE NOT EXISTS (SELECT 1 FROM [reference].[ExtractStatus] AS t WHERE t.[ExtractStatusCode] = s.[ExtractStatusCode]);
+
+------------------------------------------------------------------------------------------
+DECLARE @ValidationStatus TABLE (
+    [ValidationStatusCode] VARCHAR (15)   NOT NULL,
+    [Description]          NVARCHAR (200) NOT NULL,
+    PRIMARY KEY ([ValidationStatusCode])
+);
+
+INSERT INTO @ValidationStatus ([ValidationStatusCode], [Description])
+VALUES
+    ('PASSED', N'Every control passed.'),
+    ('WARNING', N'No control failed, but at least one warned (prior-period change or an uncheckable rule).'),
+    ('FAILED', N'At least one reconciliation, subtotal or rule control failed.');
+
+UPDATE t
+SET t.[Description] = s.[Description],
+    t.[UpdatedAtUtc] = @NowUtc
+FROM [reference].[ValidationStatus] AS t
+INNER JOIN @ValidationStatus AS s ON t.[ValidationStatusCode] = s.[ValidationStatusCode]
+WHERE EXISTS (
+    SELECT s.[Description]
+    EXCEPT
+    SELECT t.[Description]
+);
+
+INSERT INTO [reference].[ValidationStatus] ([ValidationStatusCode], [Description])
+SELECT s.[ValidationStatusCode], s.[Description]
+FROM @ValidationStatus AS s
+WHERE NOT EXISTS (SELECT 1 FROM [reference].[ValidationStatus] AS t WHERE t.[ValidationStatusCode] = s.[ValidationStatusCode]);
+
+------------------------------------------------------------------------------------------
+DECLARE @ApprovalStatus TABLE (
+    [ApprovalStatusCode] VARCHAR (15)   NOT NULL,
+    [Description]        NVARCHAR (200) NOT NULL,
+    PRIMARY KEY ([ApprovalStatusCode])
+);
+
+INSERT INTO @ApprovalStatus ([ApprovalStatusCode], [Description])
+VALUES
+    ('PENDING', N'Not yet reviewed.'),
+    ('APPROVED', N'Approved for release by someone other than the requester.'),
+    ('REJECTED', N'Rejected by a reviewer; kept for the record.');
+
+UPDATE t
+SET t.[Description] = s.[Description],
+    t.[UpdatedAtUtc] = @NowUtc
+FROM [reference].[ApprovalStatus] AS t
+INNER JOIN @ApprovalStatus AS s ON t.[ApprovalStatusCode] = s.[ApprovalStatusCode]
+WHERE EXISTS (
+    SELECT s.[Description]
+    EXCEPT
+    SELECT t.[Description]
+);
+
+INSERT INTO [reference].[ApprovalStatus] ([ApprovalStatusCode], [Description])
+SELECT s.[ApprovalStatusCode], s.[Description]
+FROM @ApprovalStatus AS s
+WHERE NOT EXISTS (SELECT 1 FROM [reference].[ApprovalStatus] AS t WHERE t.[ApprovalStatusCode] = s.[ApprovalStatusCode]);
+
+------------------------------------------------------------------------------------------
+DECLARE @ExtractType TABLE (
+    [ExtractTypeCode]     VARCHAR (30)   NOT NULL,
+    [Description]         NVARCHAR (400) NOT NULL,
+    [Grain]               NVARCHAR (200) NOT NULL,
+    [OwnerDepartmentCode] VARCHAR (30)   NOT NULL,
+    [SecurityClass]       VARCHAR (25)   NOT NULL,
+    [PeriodType]          VARCHAR (15)   NOT NULL,
+    [AccessRoleName]      NVARCHAR (128) NOT NULL,
+    [IsPublicSafe]        BIT            NOT NULL,
+    [IsPrivileged]        BIT            NOT NULL,
+    [GeneratorVersion]    VARCHAR (10)   NOT NULL,
+    PRIMARY KEY ([ExtractTypeCode])
+);
+
+INSERT INTO @ExtractType ([ExtractTypeCode], [Description], [Grain], [OwnerDepartmentCode], [SecurityClass],
+    [PeriodType], [AccessRoleName], [IsPublicSafe], [IsPrivileged], [GeneratorVersion])
+VALUES
+    ('ENROLLMENT_CENSUS',
+        N'R1 Enrollment census extract from the term''s census snapshot.',
+        N'One row per student per term', 'REGISTRAR',
+        'CONFIDENTIAL_STUDENT', 'TERM', N'role_enrollment_reporter', 0, 1, '1.0'),
+    ('AID_PACKAGING',
+        N'R2 Financial aid packaging for an aid year.',
+        N'One row per student, aid year and fund', 'FINANCIAL_AID',
+        'CONFIDENTIAL_STUDENT', 'ACADEMIC_YEAR', N'role_financial_aid_reporter', 0, 1, '1.0'),
+    ('ACCOUNT_AGING',
+        N'R3 Student account aging as of a date.',
+        N'One row per student with a posted transaction', 'STUDENT_ACCOUNTS',
+        'CONFIDENTIAL_STUDENT', 'AS_OF_DATE', N'role_student_accounts_reporter', 0, 1, '1.0'),
+    ('ACADEMIC_PROGRESS',
+        N'R4 Academic progress for a term.',
+        N'One row per student per term', 'ACADEMIC_AFFAIRS',
+        'CONFIDENTIAL_STUDENT', 'TERM', N'role_enrollment_reporter', 0, 1, '1.0'),
+    ('EXCEPTION_WORKLIST',
+        N'R5 Masked applicant integration exception worklist.',
+        N'One row per active exception', 'DATA_OPERATIONS',
+        'INTERNAL_MASKED', 'NONE', N'role_integration_service', 0, 0, '1.0'),
+    ('LEADERSHIP_KPI',
+        N'R6 Leadership KPI dataset for the terms of an academic year.',
+        N'One row per term and measure', 'INSTITUTIONAL_RESEARCH',
+        'INTERNAL_AGGREGATE', 'ACADEMIC_YEAR', N'role_ir_analyst', 1, 0, '1.0'),
+    ('DQ_SCORECARD',
+        N'Data-quality scorecard from the latest validation run.',
+        N'One row per data-quality rule', 'DATA_OPERATIONS',
+        'INTERNAL_AGGREGATE', 'NONE', N'role_integration_service', 1, 0, '1.0'),
+    ('IPEDS_FE',
+        N'Educational simulation of the IPEDS Fall Enrollment component; not an IPEDS submission.',
+        N'One row per section and cell', 'INSTITUTIONAL_RESEARCH',
+        'INTERNAL_AGGREGATE', 'TERM', N'role_ir_analyst', 1, 0, '1.0'),
+    ('IPEDS_E12',
+        N'Educational simulation of the IPEDS 12-month Enrollment component; not an IPEDS submission.',
+        N'One row per section and cell', 'INSTITUTIONAL_RESEARCH',
+        'INTERNAL_AGGREGATE', 'ACADEMIC_YEAR', N'role_ir_analyst', 1, 0, '1.0'),
+    ('IPEDS_C',
+        N'Educational simulation of the IPEDS Completions component; not an IPEDS submission.',
+        N'One row per section and cell', 'INSTITUTIONAL_RESEARCH',
+        'INTERNAL_AGGREGATE', 'ACADEMIC_YEAR', N'role_ir_analyst', 1, 0, '1.0'),
+    ('IPEDS_SFA',
+        N'Educational simulation of the IPEDS Student Financial Aid component; not an IPEDS submission.',
+        N'One row per student group and aid type', 'INSTITUTIONAL_RESEARCH',
+        'INTERNAL_AGGREGATE', 'ACADEMIC_YEAR', N'role_ir_analyst', 1, 0, '1.0');
+
+UPDATE t
+SET t.[Description] = s.[Description],
+    t.[Grain] = s.[Grain],
+    t.[OwnerDepartmentCode] = s.[OwnerDepartmentCode],
+    t.[SecurityClass] = s.[SecurityClass],
+    t.[PeriodType] = s.[PeriodType],
+    t.[AccessRoleName] = s.[AccessRoleName],
+    t.[IsPublicSafe] = s.[IsPublicSafe],
+    t.[IsPrivileged] = s.[IsPrivileged],
+    t.[GeneratorVersion] = s.[GeneratorVersion],
+    t.[UpdatedAtUtc] = @NowUtc
+FROM [reference].[ExtractType] AS t
+INNER JOIN @ExtractType AS s ON t.[ExtractTypeCode] = s.[ExtractTypeCode]
+WHERE EXISTS (
+    SELECT s.[Description], s.[Grain], s.[OwnerDepartmentCode], s.[SecurityClass], s.[PeriodType], s.[AccessRoleName],
+        s.[IsPublicSafe], s.[IsPrivileged], s.[GeneratorVersion]
+    EXCEPT
+    SELECT t.[Description], t.[Grain], t.[OwnerDepartmentCode], t.[SecurityClass], t.[PeriodType], t.[AccessRoleName],
+        t.[IsPublicSafe], t.[IsPrivileged], t.[GeneratorVersion]
+);
+
+INSERT INTO [reference].[ExtractType] ([ExtractTypeCode], [Description], [Grain], [OwnerDepartmentCode],
+    [SecurityClass], [PeriodType], [AccessRoleName], [IsPublicSafe], [IsPrivileged], [GeneratorVersion])
+SELECT s.[ExtractTypeCode], s.[Description], s.[Grain], s.[OwnerDepartmentCode], s.[SecurityClass], s.[PeriodType],
+    s.[AccessRoleName], s.[IsPublicSafe], s.[IsPrivileged], s.[GeneratorVersion]
+FROM @ExtractType AS s
+WHERE NOT EXISTS (SELECT 1 FROM [reference].[ExtractType] AS t WHERE t.[ExtractTypeCode] = s.[ExtractTypeCode]);
+
+------------------------------------------------------------------------------------------
+DECLARE @ExtractSchedule TABLE (
+    [ScheduleCode]    VARCHAR (10) NOT NULL,
+    [ExtractTypeCode] VARCHAR (30) NOT NULL,
+    [PeriodRule]      VARCHAR (30) NOT NULL,
+    [SortOrder]       TINYINT      NOT NULL,
+    PRIMARY KEY ([ScheduleCode], [ExtractTypeCode])
+);
+
+INSERT INTO @ExtractSchedule ([ScheduleCode], [ExtractTypeCode], [PeriodRule], [SortOrder])
+VALUES
+    ('DAILY', 'ACCOUNT_AGING', 'TODAY', 1),
+    ('DAILY', 'AID_PACKAGING', 'CURRENT_ACADEMIC_YEAR', 2),
+    ('DAILY', 'EXCEPTION_WORKLIST', 'NONE', 3),
+    ('DAILY', 'LEADERSHIP_KPI', 'CURRENT_ACADEMIC_YEAR', 4),
+    ('WEEKLY', 'DQ_SCORECARD', 'NONE', 1),
+    ('WEEKLY', 'ACADEMIC_PROGRESS', 'CURRENT_TERM', 2),
+    ('CENSUS', 'ENROLLMENT_CENSUS', 'NEW_SNAPSHOT_TERMS', 1),
+    ('CENSUS', 'IPEDS_FE', 'NEW_SNAPSHOT_FALL_TERMS', 2),
+    ('CENSUS', 'IPEDS_E12', 'LAST_COMPLETED_ACADEMIC_YEAR', 3),
+    ('CENSUS', 'IPEDS_C', 'LAST_COMPLETED_ACADEMIC_YEAR', 4),
+    ('CENSUS', 'IPEDS_SFA', 'LAST_COMPLETED_ACADEMIC_YEAR', 5);
+
+UPDATE t
+SET t.[PeriodRule] = s.[PeriodRule],
+    t.[SortOrder] = s.[SortOrder],
+    t.[UpdatedAtUtc] = @NowUtc
+FROM [reference].[ExtractSchedule] AS t
+INNER JOIN @ExtractSchedule AS s ON t.[ScheduleCode] = s.[ScheduleCode] AND t.[ExtractTypeCode] = s.[ExtractTypeCode]
+WHERE EXISTS (
+    SELECT s.[PeriodRule], s.[SortOrder]
+    EXCEPT
+    SELECT t.[PeriodRule], t.[SortOrder]
+);
+
+INSERT INTO [reference].[ExtractSchedule] ([ScheduleCode], [ExtractTypeCode], [PeriodRule], [SortOrder])
+SELECT s.[ScheduleCode], s.[ExtractTypeCode], s.[PeriodRule], s.[SortOrder]
+FROM @ExtractSchedule AS s
+WHERE NOT EXISTS (
+    SELECT 1 FROM [reference].[ExtractSchedule] AS t
+    WHERE t.[ScheduleCode] = s.[ScheduleCode] AND t.[ExtractTypeCode] = s.[ExtractTypeCode]
+);
+
 -- noqa: enable=RF01
 
 COMMIT TRANSACTION;
