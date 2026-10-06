@@ -1,0 +1,9 @@
+role 'Division - Business and Technology'
+	modelPermission: read
+	lineageTag: f6fbbc48-c1c9-5de1-a9ec-9c602a0e35e8
+
+	tablePermission DimProgram = [DivisionCode] = "BUSINESS_TECHNOLOGY"
+
+	tablePermission FactAidAward = FALSE()
+
+	tablePermission FactAccountBalance = FALSE()

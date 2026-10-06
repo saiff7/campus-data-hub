@@ -259,3 +259,31 @@ BEGIN
     EXEC [staging].[usp_StageSlateApplicants] @BatchId = 10;
 END;
 GO
+
+CREATE PROCEDURE [StagingTests].[test credentials stage the latest landed version once]
+AS
+BEGIN
+    EXEC tSQLt.FakeTable @TableName = N'landing.J1CredentialRaw', @Identity = 1;
+    EXEC tSQLt.FakeTable @TableName = N'staging.CredentialAwarded';
+
+    INSERT INTO [landing].[J1CredentialRaw] ([BatchId], [CredentialAwardedId], [IdNumber], [ProgramCode], [TermCode], [AwardedDate])
+    VALUES
+        (1, 501, 2400001, 'WELD.CERT', '2025SP', '2025-05-20'),
+        (2, 501, 2400001, 'WELD.CERT', '2025SP', '2025-05-22'),
+        (1, 502, 2400002, 'NURS.AS', '2026SP', '2026-05-21');
+
+    DECLARE @FirstRun INT;
+    DECLARE @SecondRun INT;
+    EXEC [staging].[usp_StageJ1Credentials] @BatchId = 10, @RowsAffected = @FirstRun OUTPUT;
+    EXEC [staging].[usp_StageJ1Credentials] @BatchId = 11, @RowsAffected = @SecondRun OUTPUT;
+
+    SELECT c.[CredentialAwardedId], c.[AwardedDate], c.[LastStagedBatchId] INTO #Actual FROM [staging].[CredentialAwarded] AS c;
+    SELECT TOP (0) a.[CredentialAwardedId], a.[AwardedDate], a.[LastStagedBatchId] INTO #Expected FROM #Actual AS a;
+    INSERT INTO #Expected ([CredentialAwardedId], [AwardedDate], [LastStagedBatchId])
+    VALUES (501, '2025-05-22', 10), (502, '2026-05-21', 10);
+
+    EXEC tSQLt.AssertEqualsTable @Expected = N'#Expected', @Actual = N'#Actual';
+    EXEC tSQLt.AssertEquals @Expected = 2, @Actual = @FirstRun;
+    EXEC tSQLt.AssertEquals @Expected = 0, @Actual = @SecondRun;
+END;
+GO

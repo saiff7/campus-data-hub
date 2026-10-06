@@ -22,14 +22,26 @@
 
 ## Known limitations of the local environment
 
-- Parts 1 and 2 deploy, seed and run the pipeline as `sa` against a local container. The
-  pipeline writes to J1-Sim across databases, which needs only `EXECUTE` on
-  `J1Sim.usp_ReceiveAdmittedApplicant` for the integration service; least-privilege database
-  roles, curated views and access auditing are introduced in Part 3.
+- Developers deploy, seed and run the pipeline as `sa` against a local container. People and
+  reports use the eight least-privilege roles in
+  [docs/architecture/security-model.md](docs/architecture/security-model.md): `SELECT` or
+  `EXECUTE` on curated objects only, with `landing`, `staging` and `core` denied. The deployed
+  permissions are tested against the specified matrix. A production integration service would
+  also need `EXECUTE` on `J1Sim.usp_ReceiveAdmittedApplicant` in the source database; that
+  cross-database grant is not modelled here.
 - Exception worklists, data-quality results and match evidence store identifiers and codes, not
-  names, birth dates or contact values. Error messages raised by the procedures name identifiers
-  only; engine messages in `audit.ErrorLog` can quote values, so that table is restricted with
-  the other operational tables in Part 3.
+  names, birth dates or contact values. Engine messages in `audit.ErrorLog` can quote values; only
+  `role_auditor` (schema-wide `SELECT` on `audit`) and `db_owner` can read that table.
+- Masked outputs (`security.vw_StudentMasked`, `bi`) use random surrogate keys. Only
+  `db_owner` can read the key table `security.StudentPseudonym`.
+- Extract generation, export and approval, exception drill-through and security administration
+  are recorded in `audit.AccessEvent`. Every permission or role-membership change is recorded in
+  `audit.PermissionChangeEvent` by a database DDL trigger, including changes made outside the
+  procedures.
+- `sample-output/` may hold only aggregate extracts copied with `campus-ops export --public`,
+  which refuses student-level types and shows counts of 1 to 4 as `<5`.
+- Power BI imports only the masked `bi` schema, through a login in `role_ir_analyst`. Power BI
+  roles are separate from SQL roles; see `powerbi/dax/RLS-Roles.md`.
 - `Scripts/reset_operational_data.sql` deletes all operational history and exists for development
   and tests only. It is not part of the DACPAC and refuses to run without explicit confirmation.
 - tSQLt is installed only into development and CI databases. Its installation enables CLR on the

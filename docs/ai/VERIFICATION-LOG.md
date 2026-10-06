@@ -105,3 +105,56 @@ the full pipeline ran and reconciled on a disposable server.
 
 - SqlPackage still needs the .NET 8 build override on this machine (see Part 1); CI uses the
   current .NET 10 build directly.
+
+## 2026-10-05 to 2026-10-06: Part 3 reports, compliance and security
+
+Environment as Part 2, plus `Microsoft.SqlServer.Dacpacs.Master` 160.2.8 (catalog view
+references). NCES 2024-25 IPEDS survey packages (Fall Enrollment, 12-month Enrollment for
+public 2-year institutions, Completions and Student Financial Aid) were read on 2026-10-05.
+They were extracted locally from the PDFs, because a summarizing fetch returned vague text.
+
+| Artifact | Check | Result |
+|---|---|---|
+| Credential landing | Deploy onto the Part 2 database, then `make nightly` | **Found:** 0 of 139 credentials landed, because the J1-Sim watermark had already passed every credential's timestamp. An entity added to an existing source never receives its history, and a fresh environment would hide this. **Fix:** read every credential until the first one lands (the hash comparison keeps that safe), and never move the batch watermark below the previous one. **Re-check:** 139 landed; the rerun landed 0; the watermark was unchanged |
+| Census snapshot constraint | tSQLt `ApplyConstraint` test | **Found:** an excluded row with a NULL reason was accepted. Comparisons with NULL are UNKNOWN, and a `CHECK` passes on UNKNOWN. **Fix:** `IS NOT NULL` stated explicitly; the same care was taken in every later `CHECK` |
+| Test design | First census tests | **Found:** a `SetUp` that both fakes a view and inserts into it compiles before the fake exists (error 4406), even with `SetFakeViewOn`. **Fix:** inserts moved to helper procedures |
+| SQL lint | `sqlfluff` after the first report commit | **Found:** a check filtered through `tail` hid AM04 findings, and one commit went in with lint failing (the Part 2 lesson, repeated). **Fix:** the findings were fixed in the same unpushed commit; from then on lint was judged only by its exit code, before each commit |
+| Real census capture | Seven historical terms | Captured with `CaptureLagDays` from 20 to 750 days (late captures by design; ADR-003 and the runbook say so); checksums verify |
+| Reports on the seed | Control invariants | Aid offered = `core` total (4,963,250.00); aging net = `core` net (2,319,491.20); the bucket invariant holds for all 1,796 students; earned ≤ attempted for all 4,540 progress rows |
+| Report tests | Mutation: credits applied newest-first; D grades not earned | Each was caught by exactly the expected test; both restored by redeploy |
+| Extract runs | All eleven types on the seed | Every reconciliation, subtotal and rule control passes. WARNINGs are genuine: fall headcount grows 135% from 2024FA (the partial first year) against a 20% limit |
+| Extract checksum | SQL `ContentSha256` against Python SHA-256 of the exported bytes | 13 of 13 runs equal; a value with accents, an en dash, commas and quotes also matched |
+| Extract procedures | tSQLt and review | **Found:** `OUTPUT` parameters are not returned when a procedure raises an error, so a caller could not learn a failed run's id. **Fix:** the scheduler looks up the FAILED run. **Found (review):** an `INSERT ... EXEC` around generation would fail on its `ROLLBACK` (error 3915). **Fix:** a quiet flag instead |
+| Prior-period controls | Census schedule on real data | **Found (design):** summer was compared with spring, producing spurious warnings. **Fix:** a term period compares with the previous term of the same type; tSQLt test added |
+| Row-level security and tSQLt | `make test-sql` after adding the policy | **Found:** the policy schema-binds the snapshot rows table, so tSQLt cannot rename (fake) it (error 15336). An aborted `NoTransaction` test then left test doubles in place, including a core view replaced by a table. **Repair:** a stale rename-log entry was removed and `tSQLt.UndoTestDoubles` run; real data intact (32 batches, 7 snapshots). **Fix:** tests drop the policy inside their own transaction (the helper refuses outside one); refusal tests moved to a class that never fakes that table |
+| Security tests | Lint and first run | **Found:** SQLFluff cannot parse `EXECUTE AS`/`REVERT`, so impersonation runs in dynamic batches with their own TRY/CATCH. **Found:** metadata visibility hides other users from a security admin, so an existence pre-check refused valid grants; removed, and `ALTER ROLE` reports, audited |
+| Security model | Mutation: a stray `GRANT` on `staging`; the policy turned off | Matrix test failed, then the row-level security test failed (3 rows instead of 2); both restored. The DDL trigger recorded the stray `GRANT` and `REVOKE` with the login |
+| Schedule CLI | Review | **Found:** `run-schedule` would exit 0 on failure, because the procedure raises after its result set and pyodbc reports that only on the next result set. **Fix:** drain the result sets; exit 1 |
+| Python export | `test_extract_contracts.py` (15), `test_extracts_db.py` (15) | Pass. Census reproducibility end to end: after a late source correction and a nightly run, live census credits changed; the census report, the IPEDS Fall Enrollment SHA-256 and the snapshot verification did not |
+| Data-quality additions | Nightly run on the seed | `CRED_EARNED_CREDITS` and `STU_STATUS_CONSISTENT` evaluate 139 credentials and 2,062 students and find no failures: genuine, not tuned. Two Part 2 tests needed `staging.CredentialAwarded` faked |
+| Power BI model | `test_powerbi_model.py`, `test_powerbi_db.py`; mutation: a bad DAX column | Pass; the mutation was caught. **Not opened in Power BI Desktop** |
+| Agent jobs | `make agent-run` for all four jobs | All succeed in the container |
+
+## Part 3 hand-off checks (clean clone)
+
+The data volume was deleted (`make clean CONFIRM=1`), the branch was cloned into a new
+directory and only `.env` was copied in.
+
+| Check | Result |
+|---|---|
+| `make bootstrap`, then again | Exit 0 in 46 s and 33 s |
+| `make lint` | Exit 0 |
+| `make test`, `make test-db`, `make test-sql` | 100, 35 and 131 tests pass |
+| `make agent-install` and `make agent-run` for each job | Four jobs created; nightly, census and compliance, daily and weekly all succeed |
+| `make nightly`, `make extracts`, `make smoke` | Reconciled; the census schedule's second run does nothing; smoke passes. 25 extract runs: 19 PASSED, 6 WARNING, 0 failed controls; 7 snapshots |
+
+### Not verified here
+
+- GitHub Actions has not yet run the extended workflow; it needs a push.
+- The Power BI semantic model, report pages, role checks and screenshots need Power BI Desktop
+  on Windows ([steps](../powerbi/WINDOWS-BUILD-STEPS.md)). The traceability matrix marks them
+  "pending Windows session".
+- The IPEDS definitions were read from the packages for 4-year institutions and program
+  reporters, which share a glossary with the public 2-year academic-reporter package. IR must
+  confirm them against that package.
+- SqlPackage still needs the .NET 8 build override on this machine (see Part 1).

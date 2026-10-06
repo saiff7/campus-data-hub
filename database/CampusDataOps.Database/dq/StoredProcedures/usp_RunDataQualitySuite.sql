@@ -32,6 +32,7 @@ BEGIN
         EXEC [dq].[usp_CheckFinancialAidPeriods] @ValidationRunId = @ValidationRunId;
         EXEC [dq].[usp_CheckCrossSystemConsistency] @ValidationRunId = @ValidationRunId;
         EXEC [dq].[usp_CheckAccountControlTotals] @ValidationRunId = @ValidationRunId;
+        EXEC [dq].[usp_CheckAcademicConsistency] @ValidationRunId = @ValidationRunId;
 
         UPDATE vr
         SET vr.[EndedAtUtc] = SYSUTCDATETIME(),

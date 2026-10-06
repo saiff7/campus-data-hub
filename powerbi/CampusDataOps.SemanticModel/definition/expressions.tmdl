@@ -1,0 +1,5 @@
+expression SqlServer = "localhost,1433" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 3b0d9d34-7a52-4b4e-9d1e-5f9b6a2e0c11
+
+expression Database = "CampusDataOps" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 5c7e1a20-9f43-4d7b-8a2b-1e6f3c4d5b22

@@ -1,0 +1,71 @@
+relationship 109acd41-6f1f-51ab-8ce7-456576ef261c
+	fromColumn: FactCensusEnrollment.TermCode
+	toColumn: DimTerm.TermCode
+
+relationship 8944b69a-9cc6-523a-9e16-49f490aa2d8b
+	fromColumn: FactCensusEnrollment.ProgramCode
+	toColumn: DimProgram.ProgramCode
+
+relationship 150540ad-84b8-5b56-886d-9031ed6ce191
+	fromColumn: FactCensusEnrollment.StudentKey
+	toColumn: DimStudent.StudentKey
+
+relationship af836a63-6cfa-5fd8-8a77-09c7266dba8c
+	fromColumn: FactApplicationFunnel.TermCode
+	toColumn: DimTerm.TermCode
+
+relationship 46e4218f-7d10-53c4-a82f-0e97f2e7e590
+	fromColumn: FactApplicationFunnel.ProgramCode
+	toColumn: DimProgram.ProgramCode
+
+relationship 255b0a62-2a1a-5541-892f-b39c3fc98fe0
+	fromColumn: FactAidAward.TermCode
+	toColumn: DimTerm.TermCode
+
+relationship 8c9ab123-5e58-5a0a-b53b-a55fa9254f35
+	fromColumn: FactAidAward.StudentKey
+	toColumn: DimStudent.StudentKey
+
+relationship b1ab3f59-1334-547b-a98b-ef4b07a48585
+	fromColumn: FactAccountBalance.StudentKey
+	toColumn: DimStudent.StudentKey
+
+relationship 0439edef-f3a4-52ef-9f9a-fb89bd05b73f
+	fromColumn: FactCourseOutcome.TermCode
+	toColumn: DimTerm.TermCode
+
+relationship bb43c686-d5d6-5f5f-a70b-5f6744272cce
+	fromColumn: FactCourseOutcome.ProgramCode
+	toColumn: DimProgram.ProgramCode
+
+relationship 35afdc75-fc16-5dbc-bb28-db698ec98ed1
+	fromColumn: FactIntegrationRun.RunDate
+	toColumn: DimDate.Date
+
+relationship 9ddc1b3a-2d14-5bdf-8623-c43446d2a2d3
+	fromColumn: FactIntegrationException.ExceptionReasonCode
+	toColumn: DimExceptionReason.ExceptionReasonCode
+
+relationship 3bbf5a09-ad43-5454-b995-354fbd673c40
+	fromColumn: FactIntegrationException.CreatedDate
+	toColumn: DimDate.Date
+
+relationship e1096773-4b8e-5436-a8b8-0140f68a808d
+	fromColumn: FactDataQualityResult.RuleCode
+	toColumn: DimDataQualityRule.RuleCode
+
+relationship 44fc1bb9-5a34-5457-adba-89000b876c82
+	fromColumn: FactDataQualityResult.RunDate
+	toColumn: DimDate.Date
+
+relationship 4c28fb4a-7d2c-5156-ae42-37709cf2bd3b
+	fromColumn: DimDate.TermCode
+	toColumn: DimTerm.TermCode
+
+relationship c6913ca5-63df-5e1c-aa36-9537957cfa1a
+	fromColumn: DimExceptionReason.OwnerDepartment
+	toColumn: DimDepartment.DepartmentName
+
+relationship 22f57312-a75c-5187-b839-9a11fc3de916
+	fromColumn: DimDataQualityRule.OwnerDepartment
+	toColumn: DimDepartment.DepartmentName

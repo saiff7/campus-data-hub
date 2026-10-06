@@ -56,8 +56,21 @@ incremental watermark load cannot otherwise see, whenever the same student-term 
 **`AID_DISBURSED_ENROLLED`.** Checks for a `REGISTERED` enrollment in the award's term. This is a
 data-consistency rule, not a Title IV eligibility determination.
 
-## Deferred to Part 3
+## Added in Part 3
 
-Credential-before-completion and mutually inconsistent status-combination rules need credential
-and census data that Part 3 introduces. Issue disposition (`dq.IssueDisposition`) arrives with the
-Data Quality dashboard.
+| Rule code | Entity (record key) | Severity | Owner | Fails when |
+|---|---|---|---|---|
+| `CRED_EARNED_CREDITS` | Credential (`CredentialAwardedId`) | HIGH | Registrar | The student had not earned the program's required credits (graded D or better, in terms starting no later than the award term) when the credential was awarded. Detail `EARNED_<n>_OF_<required>` |
+| `STU_STATUS_CONSISTENT` | Student (`IdNumber`) | MEDIUM | Registrar | A `GRADUATED` student has no credential (`GRADUATED_NO_CREDENTIAL`), or a `WITHDRAWN` student is still `REGISTERED` in a term that has not ended (`WITHDRAWN_FUTURE_REGISTRATION`) |
+
+On the default seed both rules evaluate every record (139 credentials and 2,062 students) and find
+no failures. The generator awards credentials only after completion, so these rules guard
+against future source drift rather than reporting planted cases.
+
+## Issue disposition
+
+An owner records a decision about a failure with `dq.usp_RecordIssueDisposition`:
+`FIX_IN_SOURCE`, `ACCEPTED_EXCEPTION` (which requires a review date) or `FALSE_POSITIVE`, always
+with a note. Each new decision supersedes the current one, and earlier decisions are kept.
+`dq.vw_CurrentDataQualityIssues` shows the current disposition beside each failure. A
+disposition annotates a failure; it never removes it from the scorecard or the pass rate.

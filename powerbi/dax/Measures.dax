@@ -1,0 +1,143 @@
+// Measures of the CampusDataOps semantic model. powerbi/tools/generate_tmdl.py builds the
+// Measures table from this file: each block is optional "// folder:" and "// format:" lines,
+// then "Name = expression" (the expression may continue on following lines).
+// Definitions follow compliance.MeasureDefinition and docs/specifications/report-catalog.md;
+// census measures read only snapshot facts. NOT yet opened in Power BI Desktop.
+
+// folder: Enrollment
+// format: #,0
+Census Headcount = CALCULATE(COUNTROWS(FactCensusEnrollment), FactCensusEnrollment[IsCensusIncluded] = TRUE())
+
+// folder: Enrollment
+// format: #,0.0
+Census Credits = CALCULATE(SUM(FactCensusEnrollment[CensusCredits]), FactCensusEnrollment[IsCensusIncluded] = TRUE())
+
+// folder: Enrollment
+// format: #,0.0
+Census FTE = DIVIDE([Census Credits], 15)
+
+// folder: Enrollment
+// format: 0.0%
+Full-Time Share = DIVIDE(CALCULATE([Census Headcount], FactCensusEnrollment[AttendanceIntensity] = "FULL_TIME"), [Census Headcount])
+
+// folder: Enrollment
+// format: #,0
+Entering Students = CALCULATE([Census Headcount], FactCensusEnrollment[EntryStatus] = "ENTERING")
+
+// folder: Admissions
+// format: #,0
+Applications = CALCULATE(SUM(FactApplicationFunnel[ApplicationCount]), FactApplicationFunnel[ApplicationStatus] <> "STARTED")
+
+// folder: Admissions
+// format: #,0
+Admits = CALCULATE(SUM(FactApplicationFunnel[ApplicationCount]), FactApplicationFunnel[ApplicationStatus] IN {"ADMITTED", "DEPOSITED"})
+
+// folder: Admissions
+// format: #,0
+Deposits = CALCULATE(SUM(FactApplicationFunnel[ApplicationCount]), FactApplicationFunnel[ApplicationStatus] = "DEPOSITED")
+
+// folder: Admissions
+// format: 0.0%
+Yield Rate = DIVIDE([Deposits], [Admits])
+
+// folder: Financial Aid
+// format: $#,0
+Aid Offered = SUM(FactAidAward[OfferedAmount])
+
+// folder: Financial Aid
+// format: $#,0
+Aid Accepted = SUM(FactAidAward[AcceptedAmount])
+
+// folder: Financial Aid
+// format: $#,0
+Aid Disbursed = SUM(FactAidAward[DisbursedAmount])
+
+// folder: Financial Aid
+// format: $#,0
+Aid Remaining = [Aid Accepted] - [Aid Disbursed]
+
+// folder: Financial Aid
+// format: #,0
+Aid Recipients = CALCULATE(DISTINCTCOUNT(FactAidAward[StudentKey]), FactAidAward[AwardStatus] = "ACCEPTED")
+
+// folder: Student Accounts
+// format: $#,0
+Outstanding Balance = SUMX(FactAccountBalance, MAX(FactAccountBalance[NetBalance], 0))
+
+// folder: Student Accounts
+// format: $#,0
+Balance Over 90 Days = SUM(FactAccountBalance[Days091Plus])
+
+// folder: Student Accounts
+// format: #,0
+Students With a Balance = CALCULATE(COUNTROWS(FactAccountBalance), FactAccountBalance[NetBalance] > 0)
+
+// folder: Academic
+// format: 0.0%
+Course Success Rate = DIVIDE(SUM(FactCourseOutcome[SuccessfulSections]), SUM(FactCourseOutcome[GradedSections]))
+
+// folder: Integration
+// format: #,0
+Open Exceptions = CALCULATE(COUNTROWS(FactIntegrationException), FactIntegrationException[IsActiveState] = TRUE())
+
+// folder: Integration
+// format: #,0.0
+Average Open Exception Age (Days) = CALCULATE(AVERAGE(FactIntegrationException[AgeDays]), FactIntegrationException[IsActiveState] = TRUE())
+
+// folder: Integration
+// format: #,0
+Applications Processed = SUM(FactIntegrationRun[Created]) + SUM(FactIntegrationRun[Matched])
+
+// folder: Integration
+// format: #,0
+Applications Rejected = SUM(FactIntegrationRun[Rejected])
+
+// folder: Integration
+// format: #,0
+Unbalanced Runs = CALCULATE(COUNTROWS(FactIntegrationRun), FactIntegrationRun[IsBalanced] = FALSE())
+
+// folder: Data Quality
+// format: #,0
+Records Failed = SUM(FactDataQualityResult[RecordsFailed])
+
+// folder: Data Quality
+// format: 0.00%
+Pass Rate = 1 - DIVIDE(SUM(FactDataQualityResult[RecordsFailed]), SUM(FactDataQualityResult[RecordsEvaluated]))
+
+// folder: Job Health
+// format: #,0
+Runs = COUNTROWS(FactIntegrationRun)
+
+// folder: Job Health
+// format: #,0
+Failed Runs = CALCULATE(COUNTROWS(FactIntegrationRun), FactIntegrationRun[BatchStatusCode] = "FAILED")
+
+// folder: Job Health
+// format: #,0
+Failed Steps = CALCULATE(COUNTROWS(FactJobStep), FactJobStep[BatchStepStatusCode] = "FAILED")
+
+// folder: Job Health
+// format: #,0.0
+Average Run Seconds = AVERAGE(FactIntegrationRun[DurationSeconds])
+
+// folder: Job Health
+// format: yyyy-mm-dd hh:nn
+Last Successful Run (UTC) = MAX(DataAsOf[LastSuccessfulRunEndedAtUtc])
+
+// folder: Status
+// format: yyyy-mm-dd hh:nn
+Refreshed At (UTC) = MAX(DataAsOf[ReadAtUtc])
+
+// folder: Status
+// format: #,0
+Hours Since Last Run = DATEDIFF([Last Successful Run (UTC)], [Refreshed At (UTC)], HOUR)
+
+// folder: Status
+Refresh Status =
+    IF(
+        ISBLANK([Last Successful Run (UTC)]), "NO SUCCESSFUL RUN",
+        IF([Hours Since Last Run] > 26, "STALE: last run over 26 hours before refresh", "CURRENT")
+    )
+
+// folder: Status
+Data As Of Label = "Data as of " & FORMAT([Last Successful Run (UTC)], "yyyy-mm-dd hh:nn") & " UTC · refreshed " & FORMAT([Refreshed At (UTC)], "yyyy-mm-dd hh:nn") & " UTC"

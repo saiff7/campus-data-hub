@@ -10,7 +10,7 @@ This is an independent portfolio simulation. It is not affiliated with any colle
 it makes no claim of administering Slate or Jenzabar. Every person, email address, phone number
 and identifier in it is fabricated.
 
-## What exists today (Parts 1 and 2)
+## What exists today (Parts 1 to 3)
 
 | Area | Implemented |
 |---|---|
@@ -23,13 +23,18 @@ and identifier in it is fabricated.
 | Exceptions | Governed lifecycle (`OPEN` to `CLOSED`) with an action history for every change, analyst identity resolution and automatic retry |
 | Outbound | Idempotent queue to J1-Sim: one transaction per write, attempt limits, crosswalk written with the write |
 | Reconciliation | One outcome per eligible application, outcomes that must add up to the eligible count, target confirmation in J1-Sim, entity counts |
-| Data quality | Sixteen metadata-driven rules with owners, severities and a scorecard |
+| Data quality | Eighteen metadata-driven rules with owners, severities, a scorecard and owner dispositions |
 | Orchestration | Eight-step nightly pipeline as a SQL Server Agent job and a Python CLI, with explicit recovery runs |
-| Quality gates | tSQLt (72 tests), pytest (78 unit and 19 database tests), Ruff, SQLFluff, GitHub Actions |
-| Documentation | Specifications, ADRs, ERDs, source-to-target mapping and three runbooks |
+| Reports | Six specified reports (census, aid packaging, account aging, academic progress, masked exception worklist, leadership KPIs) over conformed `core` views, every measure registered with an owner and lineage |
+| Census | Immutable, rule-versioned census snapshots with checksums; census reports and KPIs never read live data ([ADR-003](docs/decisions/ADR-003-census-snapshots.md)) |
+| Extracts | Recorded extract runs with exact CSV lines, SHA-256, control totals (fail or warn, never hidden), two-person approval and audited export; four IPEDS-aligned aggregate mock extracts (educational simulations) |
+| Security | Eight least-privilege roles tested against a permission matrix, raw layers denied, masked surrogate keys, program-scoped row-level security, access and permission-change auditing |
+| Scheduling | Four SQL Server Agent jobs: nightly integration, daily operational reports, weekly quality report, census and compliance |
+| Power BI | A star schema (`bi`) with data-as-of status, and a PBIP/TMDL semantic model with measures and roles. **Not yet opened in Power BI Desktop**: report pages and screenshots are pending a Windows session ([steps](docs/powerbi/WINDOWS-BUILD-STEPS.md)) |
+| Quality gates | tSQLt (131 tests), pytest (100 unit and 35 database tests), Ruff, SQLFluff, GitHub Actions |
+| Documentation | Specifications, report catalog, IPEDS mapping, three ADRs, ERDs, data dictionary, operations handbook, five runbooks and a [traceability matrix](docs/TRACEABILITY.md) |
 
-Reporting, compliance and security (Part 3) and performance tuning and release hardening
-(Part 4) follow the plan in [BLUEPRINT.md](BLUEPRINT.md).
+Performance tuning and release hardening (Part 4) follow the plan in [BLUEPRINT.md](BLUEPRINT.md).
 
 ## Architecture
 
@@ -58,8 +63,8 @@ flowchart LR
     AG[SQL Server Agent] --> CampusDataOps
 ```
 
-`core`, `reporting`, `compliance` and `security` objects arrive in Part 3; the schemas exist
-today. See [docs/architecture/system-context.md](docs/architecture/system-context.md) and
+Reports read only `core`, `compliance` and `reference`; Power BI reads only the masked `bi`
+schema. See [docs/architecture/system-context.md](docs/architecture/system-context.md) and
 [docs/architecture/erd.md](docs/architecture/erd.md).
 
 ## Prerequisites
@@ -102,7 +107,10 @@ publishes them, loads the synthetic sources and runs the smoke test. It is safe 
 | `make smoke` | Run the post-deployment smoke test |
 | `make nightly` | Run the nightly integration pipeline once and print its reconciliation |
 | `make recover FAILED_BATCH=<id> AT=<STEP>` | Resume a failed run at a step ([runbook](docs/runbooks/failed-job-recovery.md)) |
-| `make agent-install` / `make agent-run` | Create the SQL Server Agent job / run it and wait for the outcome |
+| `make agent-install` / `make agent-run [JOB=...]` | Create the four SQL Server Agent jobs / run one (nightly by default) and wait for the outcome |
+| `make extracts` | Run the CENSUS, DAILY and WEEKLY extract schedules now (same procedure as the Agent jobs) |
+| `make export RUN=<id> [PUBLIC=1]` | Write a stored extract run and its manifest to `out/extracts` (or a suppressed public copy to `sample-output`) |
+| `make powerbi-model` | Regenerate the PBIP semantic model (TMDL) from the deployed `bi` views |
 | `make reset-ops CONFIRM=1` | Development only: delete all operational data (landing through audit) |
 | `make test` | Python tests that need no database |
 | `make test-db` | Python tests against the deployed databases, including end-to-end pipeline scenarios |
@@ -112,6 +120,7 @@ publishes them, loads the synthetic sources and runs the smoke test. It is safe 
 | `uv run campus-ops summary` | Generate in memory; print row counts and dataset fingerprint |
 | `uv run campus-ops edge-cases` | List the deliberate edge cases and their fixed identifiers |
 | `uv run campus-ops run-summary --batch <id>` | Print a run's status and reconciliation counts |
+| `uv run campus-ops generate-extract --type <TYPE> [--period <P>]` | Generate one checked extract run |
 
 ### If SqlPackage reports a missing .NET runtime
 
@@ -150,6 +159,26 @@ resolve the ambiguous match so the next run writes it. The
 [failed-job recovery runbook](docs/runbooks/failed-job-recovery.md) walks through a failed run
 and its recovery.
 
+Then the reporting layer:
+
+```bash
+make extracts
+```
+
+The CENSUS schedule captures a snapshot for every term whose census date has passed (they are
+late captures for the historical terms, and `CaptureLagDays` says so), then produces the census
+and IPEDS-aligned extracts. The DAILY and WEEKLY schedules produce the operational reports. Every
+run is recorded in `compliance.ExtractRun` with its controls. Two IPEDS runs report `WARNING`:
+fall headcount grows 135% from 2024FA, the partial first year of the synthetic data, which is
+above the 20% prior-period limit. The warning is recorded, not hidden. To write a file:
+
+```bash
+make export RUN=<extract run id>
+```
+
+The [recurring report runbook](docs/runbooks/recurring-report-production.md) covers review,
+approval and delivery.
+
 ## Synthetic data
 
 The generator is seeded per domain (`<seed>:<domain>`) and uses a fixed simulation date of
@@ -169,10 +198,11 @@ creates roughly 2,000 SIS people and 600 applicants. Six edge cases use fixed id
 
 ```text
 database/SourceSystems.Database/     Simulator schemas and the J1-Sim import interface (one object per file)
-database/CampusDataOps.Database/     Operations database: landing, staging, integration, dq, audit, reference
+database/CampusDataOps.Database/     Operations database: landing, staging, core, integration, dq, reporting, compliance, bi, security, audit, reference
 database/CampusDataOps.Tests/        tSQLt test classes (installed only into development and CI databases)
-automation/sql-agent/                SQL Server Agent job definition and run-and-wait script
-pipelines/campus_ops/                Python package: settings, connections, generators, loader, pipeline, CLI
+automation/sql-agent/                SQL Server Agent job definitions and a run-and-wait script
+pipelines/campus_ops/                Python package: settings, connections, generators, pipeline, extract export, CLI
+powerbi/                             PBIP project: TMDL semantic model, measures, roles (not yet opened in Desktop)
 tests/python/                        pytest suites (database tests are marked `db`)
 docs/                                Architecture, specifications, decisions, runbooks, AI usage log
 .github/workflows/validate.yml       CI: lint, test, build, deploy to a disposable SQL Server
@@ -180,10 +210,13 @@ docs/                                Architecture, specifications, decisions, ru
 
 ## Security notes
 
-Secrets live only in `.env` locally and are generated at runtime in CI. Parts 1 and 2 deploy,
-seed and run the pipeline as `sa` on a local container; least-privilege roles arrive in Part 3.
-Worklists, match evidence and data-quality results hold identifiers and codes, not personal
-values. See [SECURITY.md](SECURITY.md).
+Secrets live only in `.env` locally and are generated at runtime in CI. Developers deploy, seed and
+run the pipeline as `sa` on a local container; people and reports use eight least-privilege roles
+([security model](docs/architecture/security-model.md)). Worklists, match evidence and
+data-quality results hold identifiers and codes, not personal values, and only aggregate,
+small-cell-suppressed extracts may be copied to `sample-output/`. The design shows controls
+informed by FERPA and GLBA; a portfolio repository is not "compliant" with either. See
+[SECURITY.md](SECURITY.md).
 
 ## License
 

@@ -1,0 +1,69 @@
+table DimTerm
+	lineageTag: 2d925e76-68b1-5272-a04d-cc17bdd5a065
+
+	column TermCode
+		dataType: string
+		lineageTag: 078b177c-e57b-5978-a3d8-7c239a3fefbb
+		summarizeBy: none
+		sourceColumn: TermCode
+
+	column TermName
+		dataType: string
+		lineageTag: 6d1ef89e-d274-529a-a019-bb290496bd1f
+		summarizeBy: none
+		sourceColumn: TermName
+
+	column TermType
+		dataType: string
+		lineageTag: 1d20470b-c84a-5e78-b179-ef3ffb9b527a
+		summarizeBy: none
+		sourceColumn: TermType
+
+	column AcademicYear
+		dataType: string
+		lineageTag: 8a679c49-c13e-5309-8f4a-0dd0153a37f6
+		summarizeBy: none
+		sourceColumn: AcademicYear
+
+	column StartDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: bb844ce0-ae94-5031-99c5-e446be011349
+		summarizeBy: none
+		sourceColumn: StartDate
+
+	column CensusDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 5c0901dc-1832-58f4-987f-a297e0e7f0da
+		summarizeBy: none
+		sourceColumn: CensusDate
+
+	column EndDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: eb9d12b0-1558-59b9-8bdf-e5472ba591f2
+		summarizeBy: none
+		sourceColumn: EndDate
+
+	column HasCensusSnapshot
+		dataType: boolean
+		lineageTag: 2eb44be7-504e-56a3-abc3-b94fe586c5c0
+		summarizeBy: none
+		sourceColumn: HasCensusSnapshot
+
+	column TermSortKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 4dc371bd-6d26-5ab6-a8cb-6cb64ea2f47e
+		summarizeBy: none
+		sourceColumn: TermSortKey
+
+	partition DimTerm = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="DimTerm"]}[Data]
+				in
+				    Data

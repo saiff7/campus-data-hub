@@ -1,0 +1,107 @@
+table FactIntegrationRun
+	lineageTag: 48654e44-5789-5b44-b4aa-7a8cb1be1030
+
+	column BatchId
+		dataType: int64
+		formatString: 0
+		lineageTag: 8659dcf9-11c1-5ec7-b862-9ec7714f1d6e
+		summarizeBy: none
+		sourceColumn: BatchId
+
+	column BatchStatusCode
+		dataType: string
+		lineageTag: f153b54a-18e3-574b-bfb5-baf09c0e568e
+		summarizeBy: none
+		sourceColumn: BatchStatusCode
+
+	column StartedAtUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: cb99cb26-7fb0-5f16-bfaf-6d0d77cac41b
+		summarizeBy: none
+		sourceColumn: StartedAtUtc
+
+	column EndedAtUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 166ccde4-4a82-5b48-8afe-ab8c92d313d9
+		summarizeBy: none
+		sourceColumn: EndedAtUtc
+
+	column RecoveryOfBatchId
+		dataType: int64
+		formatString: 0
+		lineageTag: 7d8cc774-4271-51cd-9425-efd6188198f2
+		summarizeBy: none
+		sourceColumn: RecoveryOfBatchId
+
+	column SourceEligible
+		dataType: int64
+		formatString: 0
+		lineageTag: 525b0fdf-7a97-578a-838d-e0dc1bed6c7f
+		summarizeBy: none
+		sourceColumn: SourceEligible
+
+	column Created
+		dataType: int64
+		formatString: 0
+		lineageTag: 5aa8ba95-7377-55c0-9cf2-87b284238c04
+		summarizeBy: none
+		sourceColumn: Created
+
+	column Matched
+		dataType: int64
+		formatString: 0
+		lineageTag: 3b44a03c-2fb4-5020-a062-c480d9dfab5f
+		summarizeBy: none
+		sourceColumn: Matched
+
+	column Unchanged
+		dataType: int64
+		formatString: 0
+		lineageTag: 8813dfa5-9101-5901-bcec-fdbc4e4a2e49
+		summarizeBy: none
+		sourceColumn: Unchanged
+
+	column Rejected
+		dataType: int64
+		formatString: 0
+		lineageTag: 5774cca2-a2d0-5251-a4f0-4fde20cab4c8
+		summarizeBy: none
+		sourceColumn: Rejected
+
+	column Pending
+		dataType: int64
+		formatString: 0
+		lineageTag: b5c30c3a-848e-50f4-969b-058f0e506e44
+		summarizeBy: none
+		sourceColumn: Pending
+
+	column IsBalanced
+		dataType: boolean
+		lineageTag: 48995db4-7d97-5361-8e93-8f548befc8dd
+		summarizeBy: none
+		sourceColumn: IsBalanced
+
+	column RunDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 39a7f2d4-ead0-5f20-9fde-beb571910e30
+		summarizeBy: none
+		sourceColumn: RunDate
+
+	column DurationSeconds
+		dataType: int64
+		formatString: 0
+		lineageTag: 3ad8b5df-4297-5a79-aeed-7a3758a4c521
+		summarizeBy: none
+		sourceColumn: DurationSeconds
+
+	partition FactIntegrationRun = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="FactIntegrationRun"]}[Data]
+				in
+				    Data

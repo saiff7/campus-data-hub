@@ -43,6 +43,7 @@ from the latest landed version of the same key. The reached watermark is the lat
 | `J1Sim.StudentAccountTransaction` | `landing.J1AccountTransactionRaw` | Transaction version | `TransactionId` | Implemented (added in Part 2) |
 | `J1Sim.StudentAccountTransaction`, aggregated | `landing.J1AccountControlTotal` | Source count and sum per student-term with a changed transaction | `IdNumber`, `TermCode` | Implemented (added in Part 2) |
 | `DirectorySim.DirectoryAccount` + `GroupMembership` (sorted list) | `landing.DirectoryAccountRaw` | Account version | `AccountGuid` | Implemented |
+| `J1Sim.CredentialAwarded` | `landing.J1CredentialRaw` | Credential version | `CredentialAwardedId` | Implemented (added in Part 3; read in full until the first credential lands, because the J1-Sim watermark had already passed every credential) |
 
 Landing accepts every row as received; validation happens in staging, so landing batches always
 report zero rejected rows.
@@ -58,8 +59,8 @@ values. Normalization rules are in [matching-rules.md](matching-rules.md).
 | `J1PersonRaw` | `staging.Person` | Same name, email, phone and postal normalization; student fields carried with `HasStudentRecord` | Implemented |
 | `DirectoryAccountRaw` | `staging.DirectoryAccount` | `EmployeeIdNumber` parsed when `EmployeeId` is 7 digits | Implemented |
 | `J1EnrollmentRaw`, `J1FinancialAidRaw`, `J1AccountTransactionRaw` | `staging.Enrollment`, `staging.FinancialAidAward`, `staging.AccountTransaction` | Typed copies; integrity checked by data-quality rules, not corrected | Implemented |
+| `J1CredentialRaw` | `staging.CredentialAwarded` | Typed copy | Implemented (Part 3) |
 
-**Deviation:** the conformed `core` layer is deferred to Part 3, where reports first need it.
 Matching compares `staging.Applicant` with `staging.Person`, the current standardized J1-Sim
 state.
 
@@ -73,7 +74,22 @@ state.
 | `OutboundStudentQueue` | `J1Sim.Person`, `J1Sim.Student`, `J1Sim.IntegrationReceipt` via `J1Sim.usp_ReceiveAdmittedApplicant` | Phone sent as `NNN-NNN-NNNN`; invalid email sent as NULL; new ID numbers from 8000000; receipt keyed by the idempotency key | Implemented |
 | Successful write | `integration.SourceCrosswalk` | `SLATE_SIM` + Slate-Sim `PersonId` → J1-Sim `IdNumber`, in the write's transaction | Implemented |
 | Eligible applications, queue, `vw_J1TargetStudent` | `integration.ReconciliationDetail`, `ReconciliationResult`, `ReconciliationEntityCount` | One outcome per application; outcomes add up to eligible; processed rows confirmed in J1-Sim | Implemented |
-| Staging and integration tables | `dq.ValidationRun`, `RuleExecution`, `RuleResult` | Sixteen rules in [data-quality-rules.md](data-quality-rules.md) | Implemented |
+| Staging and integration tables | `dq.ValidationRun`, `RuleExecution`, `RuleResult` | Eighteen rules in [data-quality-rules.md](data-quality-rules.md) | Implemented |
+
+## Implemented in Part 3: staging → core → reporting, compliance and bi
+
+**Decision D3:** `core` is a layer of views over staging, not copied tables. Staging already holds
+one current, standardized row per entity, so a second copy would only need keeping in sync.
+Reproducibility comes from the `compliance` snapshot tables ([ADR-003](../decisions/ADR-003-census-snapshots.md)).
+
+| From | To | Rule | Status |
+|---|---|---|---|
+| `staging.*`, `reference.*` | `core.vw_Person`, `vw_Student`, `vw_Application`, `vw_Term`, `vw_Program`, `vw_Enrollment`, `vw_AidAward`, `vw_AccountTransaction`, `vw_Credential`, `vw_StudentTermCensus` | Conformed names; census-day flags; entry status; age at census; July-June reporting year | Implemented |
+| `core.vw_StudentTermCensus` + `compliance.CensusRuleVersion` | `compliance.CensusSnapshot`, `CensusSnapshotEnrollment` | Frozen per term and rule version with checksum and source batch | Implemented |
+| `core` views and snapshots | `reporting` views and procedures (R1 to R6) | [report-catalog.md](report-catalog.md) | Implemented |
+| Snapshots and `core` | `compliance.vw_IPEDS_*` | [ipeds-measure-mapping.md](ipeds-measure-mapping.md) | Implemented (educational simulation) |
+| `reporting`, `compliance` and `dq` views | `compliance.ExtractRun`, `ExtractRow`, `ExtractControlTotal` | [extract-controls.md](extract-controls.md) | Implemented |
+| `core`, snapshots, `audit`, `integration`, `dq` | `bi.*` star schema | Students only by random surrogate key (`security.StudentPseudonym`) | Implemented; the Power BI model built on it has not been opened in Desktop |
 
 ## Edge cases and observed handling
 

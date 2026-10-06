@@ -1,0 +1,47 @@
+table DimExceptionReason
+	lineageTag: f2d5ea89-90d5-5e01-829d-def67cfbdb63
+
+	column ExceptionReasonCode
+		dataType: string
+		lineageTag: 3f1103e4-2291-5631-9158-ff3369e5847a
+		summarizeBy: none
+		sourceColumn: ExceptionReasonCode
+
+	column Description
+		dataType: string
+		lineageTag: fed0a8ba-8c4f-567e-af72-33667e1723d8
+		summarizeBy: none
+		sourceColumn: Description
+
+	column Category
+		dataType: string
+		lineageTag: e9f5f50c-7e11-535f-a26b-a40c2f0d4aaa
+		summarizeBy: none
+		sourceColumn: Category
+
+	column DefaultSeverity
+		dataType: string
+		lineageTag: f34cf6f9-3c38-5e91-a3ec-2c4c0ecf7dee
+		summarizeBy: none
+		sourceColumn: DefaultSeverity
+
+	column OwnerDepartment
+		dataType: string
+		lineageTag: 83ac9f7b-e425-5dc3-8aeb-175d6e0eade5
+		summarizeBy: none
+		sourceColumn: OwnerDepartment
+
+	column BlocksProcessing
+		dataType: boolean
+		lineageTag: d4007b25-d4c3-529c-82d0-f26b6a4e90ce
+		summarizeBy: none
+		sourceColumn: BlocksProcessing
+
+	partition DimExceptionReason = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="DimExceptionReason"]}[Data]
+				in
+				    Data

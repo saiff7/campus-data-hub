@@ -56,3 +56,22 @@ def test_program_catalog_matches_seed() -> None:
         for p in PROGRAMS
     ]
     assert [row[:6] for row in seeded] == expected
+
+
+def test_reporting_program_catalog_matches_generator() -> None:
+    reporting_seed = SEED.with_name("reporting_reference_seed.sql").read_text()
+    match = re.search(r"INSERT INTO @AcademicProgram\b.*?VALUES(.*?);", reporting_seed, re.DOTALL)
+    assert match, "no VALUES block for @AcademicProgram"
+    seeded = [[row[0], row[1], row[2], row[3], row[4], row[7]] for row in _tuples(match.group(1))]
+    expected = [
+        [
+            p.j1_code,
+            p.name,
+            p.credential_level,
+            p.cip_code,
+            str(p.required_credits),
+            "1" if p.is_active else "0",
+        ]
+        for p in PROGRAMS
+    ]
+    assert seeded == expected

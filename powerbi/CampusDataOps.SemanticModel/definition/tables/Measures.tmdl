@@ -1,0 +1,185 @@
+table Measures
+	lineageTag: 20f9758b-69ce-51ea-ae50-c9772971afec
+
+	measure 'Census Headcount' = CALCULATE(COUNTROWS(FactCensusEnrollment), FactCensusEnrollment[IsCensusIncluded] = TRUE())
+		formatString: #,0
+		displayFolder: Enrollment
+		lineageTag: 316744b4-3df7-5a8e-adba-79ab1a1b8d3a
+
+	measure 'Census Credits' = CALCULATE(SUM(FactCensusEnrollment[CensusCredits]), FactCensusEnrollment[IsCensusIncluded] = TRUE())
+		formatString: #,0.0
+		displayFolder: Enrollment
+		lineageTag: e11558fe-2213-5610-8296-61545021a616
+
+	measure 'Census FTE' = DIVIDE([Census Credits], 15)
+		formatString: #,0.0
+		displayFolder: Enrollment
+		lineageTag: ace27c4c-8f56-5ca0-8fe3-b9c1befce7b8
+
+	measure 'Full-Time Share' = DIVIDE(CALCULATE([Census Headcount], FactCensusEnrollment[AttendanceIntensity] = "FULL_TIME"), [Census Headcount])
+		formatString: 0.0%
+		displayFolder: Enrollment
+		lineageTag: e2034ea3-f6e9-550f-a2f5-e2085b8e2462
+
+	measure 'Entering Students' = CALCULATE([Census Headcount], FactCensusEnrollment[EntryStatus] = "ENTERING")
+		formatString: #,0
+		displayFolder: Enrollment
+		lineageTag: cd283e2f-2615-5e7b-97ca-87b31cf4548e
+
+	measure Applications = CALCULATE(SUM(FactApplicationFunnel[ApplicationCount]), FactApplicationFunnel[ApplicationStatus] <> "STARTED")
+		formatString: #,0
+		displayFolder: Admissions
+		lineageTag: 832f52b6-8a51-5587-94e1-d8da91e3a958
+
+	measure Admits = CALCULATE(SUM(FactApplicationFunnel[ApplicationCount]), FactApplicationFunnel[ApplicationStatus] IN {"ADMITTED", "DEPOSITED"})
+		formatString: #,0
+		displayFolder: Admissions
+		lineageTag: 5757ed3e-12b7-5489-8fa8-888a01d2d822
+
+	measure Deposits = CALCULATE(SUM(FactApplicationFunnel[ApplicationCount]), FactApplicationFunnel[ApplicationStatus] = "DEPOSITED")
+		formatString: #,0
+		displayFolder: Admissions
+		lineageTag: d54df248-2033-5a9d-a094-4e7e7d093437
+
+	measure 'Yield Rate' = DIVIDE([Deposits], [Admits])
+		formatString: 0.0%
+		displayFolder: Admissions
+		lineageTag: 50c936dd-94de-5f93-984c-18c72181e3d2
+
+	measure 'Aid Offered' = SUM(FactAidAward[OfferedAmount])
+		formatString: $#,0
+		displayFolder: Financial Aid
+		lineageTag: e5f9a15e-756f-5a10-b879-1edaa938b10d
+
+	measure 'Aid Accepted' = SUM(FactAidAward[AcceptedAmount])
+		formatString: $#,0
+		displayFolder: Financial Aid
+		lineageTag: 176dd651-7fbf-557b-a2ee-352b994bcf3b
+
+	measure 'Aid Disbursed' = SUM(FactAidAward[DisbursedAmount])
+		formatString: $#,0
+		displayFolder: Financial Aid
+		lineageTag: d01b6858-e55d-5285-96df-7faded32bc66
+
+	measure 'Aid Remaining' = [Aid Accepted] - [Aid Disbursed]
+		formatString: $#,0
+		displayFolder: Financial Aid
+		lineageTag: b4b989b8-58ec-585e-85ab-190f75092d4d
+
+	measure 'Aid Recipients' = CALCULATE(DISTINCTCOUNT(FactAidAward[StudentKey]), FactAidAward[AwardStatus] = "ACCEPTED")
+		formatString: #,0
+		displayFolder: Financial Aid
+		lineageTag: ad6ae032-9af0-5eb8-897c-11e420cbcd7e
+
+	measure 'Outstanding Balance' = SUMX(FactAccountBalance, MAX(FactAccountBalance[NetBalance], 0))
+		formatString: $#,0
+		displayFolder: Student Accounts
+		lineageTag: a4caa6b2-1e7e-52dc-8c16-15de68fd2363
+
+	measure 'Balance Over 90 Days' = SUM(FactAccountBalance[Days091Plus])
+		formatString: $#,0
+		displayFolder: Student Accounts
+		lineageTag: 70fac964-ffdb-5991-946e-140874b47424
+
+	measure 'Students With a Balance' = CALCULATE(COUNTROWS(FactAccountBalance), FactAccountBalance[NetBalance] > 0)
+		formatString: #,0
+		displayFolder: Student Accounts
+		lineageTag: 5820e1ee-9bdc-5972-a043-324d9f36bab2
+
+	measure 'Course Success Rate' = DIVIDE(SUM(FactCourseOutcome[SuccessfulSections]), SUM(FactCourseOutcome[GradedSections]))
+		formatString: 0.0%
+		displayFolder: Academic
+		lineageTag: 2e392d9a-56a8-557f-bff4-1dde93541448
+
+	measure 'Open Exceptions' = CALCULATE(COUNTROWS(FactIntegrationException), FactIntegrationException[IsActiveState] = TRUE())
+		formatString: #,0
+		displayFolder: Integration
+		lineageTag: 2c668314-e985-5215-ae2c-552ae70eb953
+
+	measure 'Average Open Exception Age (Days)' = CALCULATE(AVERAGE(FactIntegrationException[AgeDays]), FactIntegrationException[IsActiveState] = TRUE())
+		formatString: #,0.0
+		displayFolder: Integration
+		lineageTag: 22e4a759-3f1d-52d2-8dde-09b94fc7a93e
+
+	measure 'Applications Processed' = SUM(FactIntegrationRun[Created]) + SUM(FactIntegrationRun[Matched])
+		formatString: #,0
+		displayFolder: Integration
+		lineageTag: 9ea02d9a-4571-5399-b110-15ebfeb4e947
+
+	measure 'Applications Rejected' = SUM(FactIntegrationRun[Rejected])
+		formatString: #,0
+		displayFolder: Integration
+		lineageTag: af22a638-953a-5e48-9c02-69de1a9c7695
+
+	measure 'Unbalanced Runs' = CALCULATE(COUNTROWS(FactIntegrationRun), FactIntegrationRun[IsBalanced] = FALSE())
+		formatString: #,0
+		displayFolder: Integration
+		lineageTag: b0276f88-b627-52cf-93ea-f073861cb796
+
+	measure 'Records Failed' = SUM(FactDataQualityResult[RecordsFailed])
+		formatString: #,0
+		displayFolder: Data Quality
+		lineageTag: 119e1351-1716-5c13-b1f6-4fe52019fa2c
+
+	measure 'Pass Rate' = 1 - DIVIDE(SUM(FactDataQualityResult[RecordsFailed]), SUM(FactDataQualityResult[RecordsEvaluated]))
+		formatString: 0.00%
+		displayFolder: Data Quality
+		lineageTag: aa71875f-c46b-5ccd-91db-e4c82b4de938
+
+	measure Runs = COUNTROWS(FactIntegrationRun)
+		formatString: #,0
+		displayFolder: Job Health
+		lineageTag: 37b67e1c-5cfc-5793-9343-3c02a21eaf09
+
+	measure 'Failed Runs' = CALCULATE(COUNTROWS(FactIntegrationRun), FactIntegrationRun[BatchStatusCode] = "FAILED")
+		formatString: #,0
+		displayFolder: Job Health
+		lineageTag: 312f1cdb-2bf2-5a67-aca9-5831658e81c7
+
+	measure 'Failed Steps' = CALCULATE(COUNTROWS(FactJobStep), FactJobStep[BatchStepStatusCode] = "FAILED")
+		formatString: #,0
+		displayFolder: Job Health
+		lineageTag: c04dd245-0b86-5e16-9d0b-f3b354a0d29d
+
+	measure 'Average Run Seconds' = AVERAGE(FactIntegrationRun[DurationSeconds])
+		formatString: #,0.0
+		displayFolder: Job Health
+		lineageTag: bf16c3c9-1320-5a72-8a0a-fdeaea5b883e
+
+	measure 'Last Successful Run (UTC)' = MAX(DataAsOf[LastSuccessfulRunEndedAtUtc])
+		formatString: yyyy-mm-dd hh:nn
+		displayFolder: Job Health
+		lineageTag: b65d9cf2-f44d-553b-ba8d-3954786e5a58
+
+	measure 'Refreshed At (UTC)' = MAX(DataAsOf[ReadAtUtc])
+		formatString: yyyy-mm-dd hh:nn
+		displayFolder: Status
+		lineageTag: 7aff48f2-9062-52cf-99ad-3e5677097c96
+
+	measure 'Hours Since Last Run' = DATEDIFF([Last Successful Run (UTC)], [Refreshed At (UTC)], HOUR)
+		formatString: #,0
+		displayFolder: Status
+		lineageTag: 7ac5987e-8b87-5c15-8838-697f55c0b24d
+
+	measure 'Refresh Status' =
+			IF(
+			ISBLANK([Last Successful Run (UTC)]), "NO SUCCESSFUL RUN",
+			IF([Hours Since Last Run] > 26, "STALE: last run over 26 hours before refresh", "CURRENT")
+			)
+		displayFolder: Status
+		lineageTag: c7fb0af4-01c4-55bf-89e2-6b91b422d420
+
+	measure 'Data As Of Label' = "Data as of " & FORMAT([Last Successful Run (UTC)], "yyyy-mm-dd hh:nn") & " UTC · refreshed " & FORMAT([Refreshed At (UTC)], "yyyy-mm-dd hh:nn") & " UTC"
+		displayFolder: Status
+		lineageTag: bcaab808-6934-5095-852a-654d7b38ce5b
+
+	column Value
+		dataType: string
+		isHidden
+		lineageTag: e53c9ad5-5825-51ff-931c-e1b6ab3d745b
+		summarizeBy: none
+		sourceColumn: [Value]
+
+	partition Measures = calculated
+		mode: import
+		source = ROW("Value", BLANK())

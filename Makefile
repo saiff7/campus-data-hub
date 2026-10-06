@@ -118,13 +118,36 @@ recover: ## Resume a failed run: make recover FAILED_BATCH=<id> AT=<STEP>
 	@test -n "$(FAILED_BATCH)" -a -n "$(AT)" || { echo "Usage: make recover FAILED_BATCH=<batch id> AT=<step code>"; exit 1; }
 	$(PY_RUN) campus_ops.cli recover --failed-batch $(FAILED_BATCH) --at $(AT)
 
+.PHONY: extracts
+extracts: ## Run the CENSUS, DAILY and WEEKLY extract schedules now (same procedure as the Agent jobs)
+	$(PY_RUN) campus_ops.cli run-schedule --code CENSUS
+	$(PY_RUN) campus_ops.cli run-schedule --code DAILY
+	$(PY_RUN) campus_ops.cli run-schedule --code WEEKLY
+
+.PHONY: export
+export: ## Write a stored extract run to out/extracts: make export RUN=<id> [PUBLIC=1 for sample-output]
+	@test -n "$(RUN)" || { echo "Usage: make export RUN=<extract run id> [PUBLIC=1]"; exit 1; }
+	$(PY_RUN) campus_ops.cli export --run $(RUN) $(if $(filter 1,$(PUBLIC)),--public,)
+
+AGENT_JOB_SCRIPTS := 01_create_nightly_integration_job.sql 03_create_daily_reports_job.sql \
+	04_create_weekly_quality_job.sql 05_create_census_compliance_job.sql
+JOB ?= CampusDataOps - Nightly Integration
+
+.PHONY: powerbi-model
+powerbi-model: ## Regenerate the PBIP semantic model (TMDL) from the deployed bi views and dax/Measures.dax
+	$(ODBC_ENV) $(UV) run python powerbi/tools/generate_tmdl.py
+
+.PHONY: data-dictionary
+data-dictionary: ## Regenerate docs/DATA-DICTIONARY.md from the deployed database catalog
+	$(ODBC_ENV) $(UV) run python docs/tools/generate_data_dictionary.py
+
 .PHONY: agent-install
-agent-install: ## Create or replace the SQL Server Agent nightly integration job
-	$(SQLCMD_RUN) -d msdb -i automation/sql-agent/01_create_nightly_integration_job.sql
+agent-install: ## Create or replace the SQL Server Agent jobs (nightly, daily reports, weekly quality, census)
+	@for script in $(AGENT_JOB_SCRIPTS); do $(SQLCMD_RUN) -d msdb -i "automation/sql-agent/$$script"; done
 
 .PHONY: agent-run
-agent-run: ## Start the Agent job, wait for it and fail if it fails
-	$(SQLCMD_RUN) -d msdb -i automation/sql-agent/02_run_nightly_integration_job.sql
+agent-run: ## Start an Agent job, wait and fail if it fails: make agent-run [JOB="CampusDataOps - Daily Operational Reports"]
+	$(SQLCMD_RUN) -d msdb -v JobName="$(JOB)" -i automation/sql-agent/02_run_agent_job.sql
 
 .PHONY: reset-ops
 reset-ops: ## DEVELOPMENT ONLY: delete all CampusDataOps operational data (requires CONFIRM=1)

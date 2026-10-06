@@ -1,0 +1,63 @@
+table FactIntegrationException
+	lineageTag: b874e8af-1928-5a9b-842b-146e712f8984
+
+	column ExceptionId
+		dataType: int64
+		formatString: 0
+		lineageTag: dd5f7275-7ebb-51c0-ad24-653ae8947cbe
+		summarizeBy: none
+		sourceColumn: ExceptionId
+
+	column ExceptionReasonCode
+		dataType: string
+		lineageTag: c66f67d5-500b-5877-b95f-159c622f31a4
+		summarizeBy: none
+		sourceColumn: ExceptionReasonCode
+
+	column ExceptionStatusCode
+		dataType: string
+		lineageTag: 308ee30f-073c-5f6b-b0f2-e7bad36a103b
+		summarizeBy: none
+		sourceColumn: ExceptionStatusCode
+
+	column Severity
+		dataType: string
+		lineageTag: d0dd12b8-e989-5227-b350-4685c365ecc1
+		summarizeBy: none
+		sourceColumn: Severity
+
+	column OccurrenceCount
+		dataType: int64
+		formatString: 0
+		lineageTag: 56302e65-6fb6-5da5-aa6d-a4ae2fb811c1
+		summarizeBy: none
+		sourceColumn: OccurrenceCount
+
+	column IsActiveState
+		dataType: boolean
+		lineageTag: ef320a31-093a-5bfe-8723-88183232b961
+		summarizeBy: none
+		sourceColumn: IsActiveState
+
+	column CreatedDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: b029d60e-2719-5b83-b052-9d3a9dc47d45
+		summarizeBy: none
+		sourceColumn: CreatedDate
+
+	column AgeDays
+		dataType: int64
+		formatString: 0
+		lineageTag: e6b72dad-32d4-5522-9292-5da74b48faef
+		summarizeBy: none
+		sourceColumn: AgeDays
+
+	partition FactIntegrationException = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="FactIntegrationException"]}[Data]
+				in
+				    Data

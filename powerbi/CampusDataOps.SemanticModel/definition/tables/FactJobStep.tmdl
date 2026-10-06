@@ -1,0 +1,86 @@
+table FactJobStep
+	lineageTag: 30737a51-c5fe-528c-8cbc-efe4bc0c43f0
+
+	column BatchStepId
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 7bba0cb0-01ec-5c23-93a5-2ddefb590fa9
+		summarizeBy: none
+		sourceColumn: BatchStepId
+
+	column BatchId
+		dataType: int64
+		formatString: 0
+		lineageTag: d9abb091-e40c-58d5-b9fd-3c524ef80dad
+		summarizeBy: none
+		sourceColumn: BatchId
+
+	column ProcessName
+		dataType: string
+		lineageTag: 9cd6f7d1-ad72-5286-a85a-3e52e8b6c055
+		summarizeBy: none
+		sourceColumn: ProcessName
+
+	column StepName
+		dataType: string
+		lineageTag: c398e55b-08b0-5d25-b511-fda3fa776125
+		summarizeBy: none
+		sourceColumn: StepName
+
+	column StepOrder
+		dataType: int64
+		formatString: 0
+		lineageTag: da086299-8bc5-5daa-89a2-c31c0b45e5cb
+		summarizeBy: none
+		sourceColumn: StepOrder
+
+	column AttemptNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 5dacf634-e19e-548d-babd-c1fcf295337d
+		summarizeBy: none
+		sourceColumn: AttemptNumber
+
+	column BatchStepStatusCode
+		dataType: string
+		lineageTag: 81c4f9de-c5a5-50ea-9550-f94d5d55f19e
+		summarizeBy: none
+		sourceColumn: BatchStepStatusCode
+
+	column StartedAtUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: cb93fc20-8fb5-569a-9750-7176e1280f5c
+		summarizeBy: none
+		sourceColumn: StartedAtUtc
+
+	column EndedAtUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 45fedbb7-ed73-526d-a0ac-d8743971b8e3
+		summarizeBy: none
+		sourceColumn: EndedAtUtc
+
+	column RowsAffected
+		dataType: int64
+		formatString: 0
+		lineageTag: c062f7d8-2a54-57e5-bbe1-89f72216f79b
+		summarizeBy: none
+		sourceColumn: RowsAffected
+
+	column DurationSeconds
+		dataType: int64
+		formatString: 0
+		lineageTag: 9ff42111-9405-5474-8313-637bf380a492
+		summarizeBy: none
+		sourceColumn: DurationSeconds
+
+	partition FactJobStep = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="FactJobStep"]}[Data]
+				in
+				    Data

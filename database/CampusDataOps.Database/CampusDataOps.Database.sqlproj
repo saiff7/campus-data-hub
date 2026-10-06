@@ -15,11 +15,18 @@
     <None Include="reference/Seed/**" />
     <Build Remove="dq/Seed/**" />
     <None Include="dq/Seed/**" />
+    <Build Remove="compliance/Seed/**" />
+    <None Include="compliance/Seed/**" />
     <!-- Operational scripts run with sqlcmd after deployment. -->
     <Build Remove="Scripts/**" />
     <None Include="Scripts/**" />
     <Build Remove="Post-Deployment.sql" />
     <PostDeploy Include="Post-Deployment.sql" />
+  </ItemGroup>
+  <!-- System catalog views (sys.database_permissions, sys.database_principals) used by the
+       security procedures and the permission matrix view resolve against master. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SqlServer.Dacpacs.Master" Version="160.2.8" />
   </ItemGroup>
   <!-- Source simulators live in a separate database. Every cross-database reference uses
        [$(SourceSystems)] and is confined to landing.vw_Source* views, integration.vw_J1*

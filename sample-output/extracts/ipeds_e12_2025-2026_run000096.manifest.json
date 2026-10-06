@@ -1,0 +1,91 @@
+{
+  "extract_run_id": 96,
+  "extract_type": "IPEDS_E12",
+  "description": "Educational simulation of the IPEDS 12-month Enrollment component; not an IPEDS submission.",
+  "reporting_period": "2025-2026",
+  "source_batch_id": 216,
+  "census_snapshot_id": null,
+  "generated_at_utc": "2026-10-06T03:25:24.760Z",
+  "generator_version": "1.0",
+  "row_count": 5,
+  "columns": [
+    {
+      "name": "ReportingPeriod",
+      "type": "text"
+    },
+    {
+      "name": "Section",
+      "type": "text"
+    },
+    {
+      "name": "AttendanceStatus",
+      "type": "text"
+    },
+    {
+      "name": "StudentCategory",
+      "type": "text"
+    },
+    {
+      "name": "Headcount",
+      "type": "count"
+    },
+    {
+      "name": "CreditHours",
+      "type": "decimal"
+    }
+  ],
+  "sha256": "442b17662c89e349c5cd8ae69e8ccf41451f13bcfb424038b4f27bbb84f29028",
+  "validation_status": "PASSED",
+  "approval_status": "PENDING",
+  "security_class": "INTERNAL_AGGREGATE",
+  "control_totals": [
+    {
+      "code": "CREDIT_HOURS",
+      "kind": "RECONCILIATION",
+      "expected": "21449.00",
+      "actual": "21449.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "DATA_ROW_COUNT",
+      "kind": "INFO",
+      "expected": null,
+      "actual": "5.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "STATUS_SUM",
+      "kind": "SUBTOTAL",
+      "expected": "1155.00",
+      "actual": "1155.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "TOTAL_AT_LEAST_FALL_CENSUS",
+      "kind": "RULE",
+      "expected": "995.00",
+      "actual": "1155.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    },
+    {
+      "code": "TOTAL_HEADCOUNT",
+      "kind": "RECONCILIATION",
+      "expected": "1155.00",
+      "actual": "1155.00",
+      "prior": null,
+      "outcome": "PASS",
+      "note": null
+    }
+  ],
+  "notice": "Educational simulation built on synthetic data; not an IPEDS submission and not real student data.",
+  "suppression": "counts 1-4 shown as <5",
+  "source_sha256": "442b17662c89e349c5cd8ae69e8ccf41451f13bcfb424038b4f27bbb84f29028"
+}

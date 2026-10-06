@@ -1,0 +1,52 @@
+table FactDataQualityResult
+	lineageTag: db1bc727-646f-5e6e-90e0-b1c3682ed4a6
+
+	column ValidationRunId
+		dataType: int64
+		formatString: 0
+		lineageTag: 613eac4b-c9a3-51cb-b4ed-40ac08cd881f
+		summarizeBy: none
+		sourceColumn: ValidationRunId
+
+	column BatchId
+		dataType: int64
+		formatString: 0
+		lineageTag: a19dcadf-c9fd-5d89-a3b3-9efc33207e1b
+		summarizeBy: none
+		sourceColumn: BatchId
+
+	column RuleCode
+		dataType: string
+		lineageTag: 9c5b8611-7581-55ca-aeaa-19cb22f895da
+		summarizeBy: none
+		sourceColumn: RuleCode
+
+	column RecordsEvaluated
+		dataType: int64
+		formatString: 0
+		lineageTag: c2978892-25f6-582c-a2d9-dfc5820586b7
+		summarizeBy: none
+		sourceColumn: RecordsEvaluated
+
+	column RecordsFailed
+		dataType: int64
+		formatString: 0
+		lineageTag: e3cfa51c-0cb4-5a4a-84c4-ef40054a3cd8
+		summarizeBy: none
+		sourceColumn: RecordsFailed
+
+	column RunDate
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 6720be2c-cedf-5918-9d76-4bfeaac318ce
+		summarizeBy: none
+		sourceColumn: RunDate
+
+	partition FactDataQualityResult = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="FactDataQualityResult"]}[Data]
+				in
+				    Data

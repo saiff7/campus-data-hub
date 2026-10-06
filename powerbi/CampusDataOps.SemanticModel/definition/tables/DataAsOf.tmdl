@@ -1,0 +1,67 @@
+table DataAsOf
+	lineageTag: 5daca557-9478-533f-b015-1d03c379698d
+
+	column LastSuccessfulRunId
+		dataType: int64
+		formatString: 0
+		lineageTag: d9f719ac-4acf-504c-83cf-dd46ff2e1b90
+		summarizeBy: none
+		sourceColumn: LastSuccessfulRunId
+
+	column LastSuccessfulRunEndedAtUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 9b5cbd6c-17c3-5cb1-90bf-bee724f5b52c
+		summarizeBy: none
+		sourceColumn: LastSuccessfulRunEndedAtUtc
+
+	column SlateWatermarkUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: edce8a84-493e-5bca-889a-d7985c81f742
+		summarizeBy: none
+		sourceColumn: SlateWatermarkUtc
+
+	column J1WatermarkUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 053659a2-2957-5df2-bfd8-93dc2c742a36
+		summarizeBy: none
+		sourceColumn: J1WatermarkUtc
+
+	column DirectoryWatermarkUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: d056acd2-aabb-54f0-ae79-5abff0056514
+		summarizeBy: none
+		sourceColumn: DirectoryWatermarkUtc
+
+	column LatestCensusCaptureUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 0d8ef7a2-add6-5859-aebd-8148941372c1
+		summarizeBy: none
+		sourceColumn: LatestCensusCaptureUtc
+
+	column LatestValidationRunId
+		dataType: int64
+		formatString: 0
+		lineageTag: 2c2c4f85-c150-597a-a7c9-6cf227957cdf
+		summarizeBy: none
+		sourceColumn: LatestValidationRunId
+
+	column ReadAtUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: c6451ee0-7ffc-50ff-ada8-75698f03ee53
+		summarizeBy: none
+		sourceColumn: ReadAtUtc
+
+	partition DataAsOf = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, Database),
+				    Data = Source{[Schema="bi", Item="DataAsOf"]}[Data]
+				in
+				    Data
