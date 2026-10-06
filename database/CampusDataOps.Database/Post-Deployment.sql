@@ -11,3 +11,5 @@ GO
 GO
 :r ./dq/Seed/dq_rule_seed.sql
 GO
+:r ./compliance/Seed/compliance_seed.sql
+GO
