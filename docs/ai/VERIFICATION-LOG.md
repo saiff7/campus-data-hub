@@ -85,18 +85,23 @@ directory and only `.env` was copied in.
 | `make agent-install`, `make agent-run`, `make nightly`, `make smoke` | All pass; the Python rerun reconciles |
 | `make lint` | **Failed** on the duplicated config section described above; fixed in the working repository and rerun there: exit 0 with no findings, then deploy, all test suites, the Agent job, a pipeline rerun and smoke passed again |
 
-### First CI run (PR #2)
+### GitHub Actions (PR #2 and merge to `main`)
 
-**Found:** 12 of 72 tSQLt tests errored in GitHub Actions with "INSERT failed because the following
-SET options have incorrect settings: 'QUOTED_IDENTIFIER'". CI uses the classic ODBC `sqlcmd`,
-which defaults `QUOTED_IDENTIFIER` OFF; locally go-sqlcmd defaults it ON. Test procedures keep
-the setting they were created with, and inserts into tables with filtered indexes or persisted
-computed columns require it ON. Reproduced locally by creating `QueueTests` with the setting
-OFF (the same tests failed). **Fix:** every `sqlcmd` call passes `-I`. **Re-check:** 72 tSQLt
-tests, smoke and the Agent run pass locally; CI result recorded on the PR.
+The extended workflow needed two fixes before it passed; both failures were in test tooling,
+not in the database code.
+
+| Run | Commit | Result |
+|---|---|---|
+| PR run 37388369351 | `1453c55` | **Found:** 12 of 72 tSQLt tests errored: "INSERT failed because the following SET options have incorrect settings: 'QUOTED_IDENTIFIER'". CI uses the classic ODBC `sqlcmd`, which defaults `QUOTED_IDENTIFIER` OFF (go-sqlcmd, used locally, defaults it ON). Test procedures keep the setting they were created with, and inserts into tables with filtered indexes or persisted computed columns require it ON. Reproduced locally by creating `QueueTests` with the setting OFF. **Fix** (`212109a`): every `sqlcmd` call passes `-I` |
+| PR run 37388992282 | `212109a` | All 72 tSQLt tests passed. **Found:** the JUnit export then failed: the classic `sqlcmd` refuses `-h -1` with `-y 0`. **Fix** (`69e7185`): keep `-y 0` and strip the header by keeping output from the first line that starts with `<`; verified locally that the file parses with 72 tests |
+| PR run [37389693378](https://github.com/saiff7/campus-data-hub/actions/runs/37389693378) | `69e7185` | All 4 checks green: lint and unit tests, secret scan, DACPAC build, and the disposable SQL Server job, in which bootstrap, the idempotent rerun, the Python database tests (including the end-to-end pipeline scenarios), tSQLt, the results upload, the SQL Server Agent job, the Python pipeline rerun and the smoke test all succeeded |
+| `main` run [37391850922](https://github.com/saiff7/campus-data-hub/actions/runs/37391850922) | merge commit `844c212` | Same 4 checks and the same steps, all green |
+
+This confirms on Linux what had only been verified locally: SQL Server Agent was running in the
+CI container in time for `make agent-run`, the pinned tSQLt download verified and installed, and
+the full pipeline ran and reconciled on a disposable server.
 
 ### Not verified here
 
-- SQL Server Agent must be running in the CI container before `make agent-run`; confirmed only
-  by the next CI run.
-- SqlPackage still needs the .NET 8 build override on this machine (see Part 1).
+- SqlPackage still needs the .NET 8 build override on this machine (see Part 1); CI uses the
+  current .NET 10 build directly.
