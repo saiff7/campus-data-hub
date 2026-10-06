@@ -113,8 +113,8 @@ jobs:
       - name: Export a public, suppressed IPEDS extract and check its manifest
         run: |
           run_id=$(uv run python -m campus_ops.cli generate-extract --type IPEDS_FE --period 2025FA | python3 -c "import json,sys; print(json.load(sys.stdin)['extract_run_id'])")
-          make export RUN="$run_id" PUBLIC=1
-          python3 -c "import json,glob; m=json.load(open(glob.glob('sample-output/extracts/*.manifest.json')[0])); assert m['suppression'] and m['sha256'], m"
+          uv run python -m campus_ops.cli export --run "$run_id" --public | tee export.json
+          python3 -c "import json; m=json.load(open(json.load(open('export.json'))['manifest'])); assert m['extract_run_id'] == $run_id and m['suppression'] and m['sha256'], m"
       - name: Rerun the pipeline from Python (must succeed and reconcile)
         run: make nightly
       - name: Smoke test after integration
