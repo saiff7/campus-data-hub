@@ -1,6 +1,5 @@
 role 'Division - Health Sciences'
 	modelPermission: read
-	lineageTag: 845d7415-b4ca-5c74-bf61-30fb78b05fc9
 
 	tablePermission DimProgram = [DivisionCode] = "HEALTH_SCIENCES"
 
