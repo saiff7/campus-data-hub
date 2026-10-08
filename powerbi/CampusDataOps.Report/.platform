@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "CampusDataOps"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "1f880e6b-5bf0-41d6-8585-036b4859e8ba"
+  }
+}
