@@ -79,7 +79,7 @@ Check it: `SELECT TOP (1) * FROM bi.DimStudent;` must succeed for `powerbi_refre
 2. If it opens: **Transform data > Edit parameters**. Set `SqlServer` (`localhost,1433` or the
    Mac's address) and `Database` (`CampusDataOps`).
 3. **Refresh**. When asked for credentials, choose **Database** and enter `powerbi_refresh`.
-4. Confirm that 18 tables are loaded (17 `bi` tables and `Measures`) and that Model view shows
+4. Confirm that 18 tables are loaded (17 `bi` tables and `_Measures`) and that Model view shows
    the relationships from `relationships.tmdl`.
 
 ### If it does not open

@@ -1,6 +1,5 @@
 role 'Division - Liberal Arts'
 	modelPermission: read
-	lineageTag: a7e1a366-d0d0-5f5e-809d-1fec72592612
 
 	tablePermission DimProgram = [DivisionCode] = "LIBERAL_ARTS"
 

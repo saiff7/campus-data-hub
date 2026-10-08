@@ -1,8 +1,8 @@
 """Static checks of the Power BI semantic model (TMDL) that run without Power BI Desktop.
 
-The model has not been opened in Desktop (docs/powerbi/WINDOWS-BUILD-STEPS.md); these tests catch
-what can be caught here: every DAX reference resolves, relationships and role filters name real
-columns, every table is referenced by the model, and no direct identifier is modelled.
+These tests catch what can be caught without Desktop: every DAX reference resolves, relationships
+and role filters name real columns, every table is referenced by the model, no direct identifier
+is modelled, and the two TMDL errors Desktop reported on first open cannot return.
 """
 
 import re
@@ -25,7 +25,7 @@ def _tables() -> dict[str, set[str]]:
 
 
 def _measures() -> dict[str, str]:
-    text = (DEFINITION / "tables" / "Measures.tmdl").read_text()
+    text = (DEFINITION / "tables" / "_Measures.tmdl").read_text()
     found = {}
     for m in re.finditer(r"^\tmeasure ('[^']+'|\S+) =(.*?)(?=^\t\t\w+:)", text, re.M | re.S):
         found[m.group(1).strip("'")] = m.group(2)
@@ -86,3 +86,11 @@ def test_tmdl_is_tab_indented() -> None:
     for path in DEFINITION.rglob("*.tmdl"):
         for number, line in enumerate(path.read_text().splitlines(), 1):
             assert not line.startswith(" "), f"{path.name}:{number} is indented with spaces"
+
+
+def test_desktop_rejections_found_on_first_open_cannot_return() -> None:
+    # Power BI Desktop (September 2026) refused the model twice: a lineageTag on a role, and a
+    # table named "Measures", which is reserved.
+    for role in (DEFINITION / "roles").glob("*.tmdl"):
+        assert "lineageTag" not in role.read_text(), role.name
+    assert "Measures" not in _tables()

@@ -1,6 +1,5 @@
 role 'Division - Human Services'
 	modelPermission: read
-	lineageTag: 7bc4f993-71b8-5b45-8989-aa82343ef4e3
 
 	tablePermission DimProgram = [DivisionCode] = "HUMAN_SERVICES"
 
