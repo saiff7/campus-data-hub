@@ -30,3 +30,7 @@ build/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Power BI Desktop per-user settings and caches
+powerbi/**/.pbi/localSettings.json
+powerbi/**/.pbi/cache.abf

@@ -19,7 +19,7 @@ Desktop, which does not run on macOS ([steps](powerbi/WINDOWS-BUILD-STEPS.md)).
 | Reproducible institutional numbers | Immutable, rule-versioned census snapshots with checksums | [ADR-003](decisions/ADR-003-census-snapshots.md); `CensusTests`; `test_census_reporting_is_reproducible_after_the_source_changes` |
 | Role-based access to student and financial data | Eight least-privilege roles, raw layers denied, masking, program-scoped row-level security, access and permission auditing | [security-model.md](architecture/security-model.md); `SecurityTests` (matrix equality, per-role probes, row-level security, audit) |
 | Automated scheduling | Four SQL Server Agent jobs | `make agent-run` for each job in CI; [operations handbook](OPERATIONS-HANDBOOK.md) |
-| Power BI reporting | `bi` star schema with data-as-of status; PBIP/TMDL model with measures and roles | `BiTests`, `test_powerbi_model.py`, `test_powerbi_db.py`. **Pages and screenshots: pending Windows session** |
+| Power BI reporting | `bi` star schema with data-as-of status; PBIP/TMDL model with measures and roles | `BiTests`, `test_powerbi_model.py`, `test_powerbi_db.py`; refreshed in Desktop, seven measures equal SQL. Executive Overview page and screenshot done; **six pages pending Windows session** |
 | Execution-plan tuning | Planned for Part 4 | Not started |
 | Version control, CI and deployment | SQL projects, DACPACs, GitHub Actions with a disposable SQL Server | [validate.yml](../.github/workflows/validate.yml); verification log |
 | Operating documentation | Runbooks, operations handbook, data dictionary, glossary, ADRs | [docs/](.) |
@@ -33,7 +33,7 @@ Desktop, which does not run on macOS ([steps](powerbi/WINDOWS-BUILD-STEPS.md)).
 | Reports run only through stable views and procedures and return consistent control totals | `reporting` and `compliance` objects; roles denied raw layers (`SecurityTests`); every extract's reconciliation controls pass on the seed (`test_extracts_db.py`) | Done |
 | Census reports stay reproducible after underlying records change | `test_census_reporting_is_reproducible_after_the_source_changes`: the live data changes, but the census report and the IPEDS Fall Enrollment checksum do not | Done |
 | Department users can access only their approved data products | `SecurityTests`: deployed permissions equal the matrix; each role reads its products and gets error 229 on raw layers and other departments' products; row-level security test | Done |
-| Public dashboard screenshots contain no direct identifiers | The model imports only the masked `bi` schema (`test_no_direct_identifier_is_modelled`, `SecurityTests` column check); screenshot review checklist in the Windows steps | **Pending Windows session** (screenshots) |
+| Public dashboard screenshots contain no direct identifiers | The model imports only the masked `bi` schema (`test_no_direct_identifier_is_modelled`, `SecurityTests` column check); screenshot review checklist in the Windows steps | `01-executive-overview.png` reviewed: aggregates only; six screenshots pending |
 | Extracts include batch ID, reporting period, generated time, row count, checksum and validation status | `compliance.ExtractRun`; manifest keys (`test_extract_contracts.py`); SQL checksum equals Python SHA-256 for every run | Done |
 
 ## Part 3 deliverables
@@ -46,6 +46,6 @@ Desktop, which does not run on macOS ([steps](powerbi/WINDOWS-BUILD-STEPS.md)).
 | Extract-run manifest and control-total validation | `compliance.ExtractRun`, `ExtractControlTotal`; `campus-ops export` | Done |
 | Custom roles and permissions test matrix | `Security/Roles`, `Security/Permissions`; `SecurityTests` | Done |
 | Masked demo views and audit events | `security.vw_StudentMasked`, `reporting.vw_ExceptionWorklist`, `bi`; `audit.AccessEvent`, `audit.PermissionChangeEvent` | Done |
-| Power BI project with seven report pages | Semantic model, measures and roles in `powerbi/` (text, statically tested) | Model done; **pages pending Windows session** |
+| Power BI project with seven report pages | Semantic model, measures and roles in `powerbi/` (text, statically tested) | Model opens in Desktop; Executive Overview done; **six pages pending** |
 | SQL Agent schedules for recurring extracts | `automation/sql-agent/03` to `05` | Done |
 | Operations handbook and data dictionary | `docs/OPERATIONS-HANDBOOK.md`, `docs/DATA-DICTIONARY.md` | Done |
