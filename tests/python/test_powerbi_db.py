@@ -33,6 +33,6 @@ def test_tmdl_tables_match_the_bi_views() -> None:
     model = {
         path.stem: re.findall(r"^\tcolumn (\S+)", path.read_text(), re.M)
         for path in TABLES.glob("*.tmdl")
-        if path.stem != "Measures"
+        if path.stem != "_Measures"
     }
     assert model == database

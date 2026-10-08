@@ -4,8 +4,8 @@
 
 Table and column definitions come from the database's own metadata for schema bi, so names and
 types cannot drift from SQL. Relationships, measures and roles are declared below and in
-powerbi/dax/Measures.dax. tests/python/test_powerbi_model.py checks the result. The output has
-NOT been opened in Power BI Desktop (see docs/powerbi/WINDOWS-BUILD-STEPS.md).
+powerbi/dax/Measures.dax. tests/python/test_powerbi_model.py checks the result. Power BI Desktop
+(September 2026) opens the output; roles carry no lineageTag, which Desktop rejects on roles.
 """
 
 import re
@@ -28,6 +28,9 @@ TYPES = {
 }  # fmt: skip
 FORMATS = {"dateTime": "yyyy-mm-dd", "decimal": "#,0.00", "int64": "0"}
 HIDDEN_KEYS = {"StudentKey", "CensusSnapshotId", "AwardId", "BatchStepId", "DateKey"}
+# Power BI Desktop rejects a table named "Measures" (a reserved name), so the measure table is
+# _Measures. Lineage tags keep their original "Measures" seed so existing tags do not change.
+MEASURES_TABLE = "_Measures"
 
 # (from table, from column, to table, to column, active)
 RELATIONSHIPS = [
@@ -108,8 +111,8 @@ def table_tmdl(table: str, columns: list[tuple[str, str]]) -> str:
 
 
 def measures_tmdl(dax: str) -> str:
-    """Build the Measures table from Measures.dax blocks (`// folder:`, then `Name = expr`)."""
-    lines = ["table Measures", f"\tlineageTag: {tag('Measures')}", ""]
+    """Build the measure table from Measures.dax blocks (`// folder:`, then `Name = expr`)."""
+    lines = [f"table {MEASURES_TABLE}", f"\tlineageTag: {tag('Measures')}", ""]
     folder = "General"
     for block in re.split(r"\n\s*\n", dax.strip()):
         for raw in block.splitlines():
@@ -141,7 +144,7 @@ def measures_tmdl(dax: str) -> str:
         "\t\tsummarizeBy: none",
         "\t\tsourceColumn: [Value]",
         "",
-        "\tpartition Measures = calculated",
+        f"\tpartition {MEASURES_TABLE} = calculated",
         "\t\tmode: import",
         '\t\tsource = ROW("Value", BLANK())',
         "",
@@ -170,7 +173,7 @@ def main() -> None:
     for table, columns in tables.items():
         (MODEL / "tables" / f"{table}.tmdl").write_text(table_tmdl(table, columns))
     dax = (ROOT / "dax" / "Measures.dax").read_text()
-    (MODEL / "tables" / "Measures.tmdl").write_text(measures_tmdl(dax))
+    (MODEL / "tables" / f"{MEASURES_TABLE}.tmdl").write_text(measures_tmdl(dax))
 
     rel = []
     for from_table, from_col, to_table, to_col, active in RELATIONSHIPS:
@@ -183,9 +186,7 @@ def main() -> None:
     (MODEL / "roles").mkdir(exist_ok=True)
     for old in (MODEL / "roles").glob("*.tmdl"):
         old.unlink()
-    (MODEL / "roles" / "Leadership.tmdl").write_text(
-        f"role Leadership\n\tmodelPermission: read\n\tlineageTag: {tag('role', 'Leadership')}\n"
-    )
+    (MODEL / "roles" / "Leadership.tmdl").write_text("role Leadership\n\tmodelPermission: read\n")
     for label, code in DIVISIONS.items():
         name = f"Division - {label}"
         (MODEL / "roles" / f"Division {label}.tmdl").write_text(
@@ -193,7 +194,6 @@ def main() -> None:
                 [
                     f"role '{name}'",
                     "\tmodelPermission: read",
-                    f"\tlineageTag: {tag('role', name)}",
                     "",
                     f'\ttablePermission DimProgram = [DivisionCode] = "{code}"',
                     "",
@@ -214,7 +214,7 @@ def main() -> None:
         "\t\tlegacyRedirects",
         "\t\treturnErrorValuesAsNull",
         "",
-        *[f"ref table {t}" for t in [*tables, "Measures"]],
+        *[f"ref table {t}" for t in [*tables, MEASURES_TABLE]],
         "",
         "ref role Leadership",
         *[f"ref role 'Division - {label}'" for label in DIVISIONS],

@@ -1,4 +1,4 @@
-table Measures
+table _Measures
 	lineageTag: 20f9758b-69ce-51ea-ae50-c9772971afec
 
 	measure 'Census Headcount' = CALCULATE(COUNTROWS(FactCensusEnrollment), FactCensusEnrollment[IsCensusIncluded] = TRUE())
@@ -180,6 +180,6 @@ table Measures
 		summarizeBy: none
 		sourceColumn: [Value]
 
-	partition Measures = calculated
+	partition _Measures = calculated
 		mode: import
 		source = ROW("Value", BLANK())

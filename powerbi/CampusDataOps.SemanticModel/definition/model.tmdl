@@ -23,7 +23,7 @@ ref table FactDataQualityResult
 ref table FactIntegrationException
 ref table FactIntegrationRun
 ref table FactJobStep
-ref table Measures
+ref table _Measures
 
 ref role Leadership
 ref role 'Division - Business and Technology'
