@@ -30,7 +30,7 @@ and identifier in it is fabricated.
 | Extracts | Recorded extract runs with exact CSV lines, SHA-256, control totals (fail or warn, never hidden), two-person approval and audited export; four IPEDS-aligned aggregate mock extracts (educational simulations) |
 | Security | Eight least-privilege roles tested against a permission matrix, raw layers denied, masked surrogate keys, program-scoped row-level security, access and permission-change auditing |
 | Scheduling | Four SQL Server Agent jobs: nightly integration, daily operational reports, weekly quality report, census and compliance |
-| Power BI | A star schema (`bi`) with data-as-of status, and a PBIP/TMDL semantic model with measures and roles. **Not yet opened in Power BI Desktop**: report pages and screenshots are pending a Windows session ([steps](docs/powerbi/WINDOWS-BUILD-STEPS.md)) |
+| Power BI | A star schema (`bi`) with data-as-of status, and a PBIP/TMDL semantic model with measures and roles. Opened and refreshed in Power BI Desktop on Windows; the Executive Overview page is built ([screenshot](powerbi/screenshots/01-executive-overview.png)). The other six pages are pending ([steps](docs/powerbi/WINDOWS-BUILD-STEPS.md)) |
 | Quality gates | tSQLt (131 tests), pytest (100 unit and 35 database tests), Ruff, SQLFluff, GitHub Actions |
 | Documentation | Specifications, report catalog, IPEDS mapping, three ADRs, ERDs, data dictionary, operations handbook, five runbooks and a [traceability matrix](docs/TRACEABILITY.md) |
 

@@ -150,11 +150,28 @@ directory and only `.env` was copied in.
 
 ### Not verified here
 
-- GitHub Actions has not yet run the extended workflow; it needs a push.
-- The Power BI semantic model, report pages, role checks and screenshots need Power BI Desktop
-  on Windows ([steps](../powerbi/WINDOWS-BUILD-STEPS.md)). The traceability matrix marks them
-  "pending Windows session".
+- Six of the seven Power BI report pages, the role checks and their screenshots (see the Windows
+  session below).
 - The IPEDS definitions were read from the packages for 4-year institutions and program
   reporters, which share a glossary with the public 2-year academic-reporter package. IR must
   confirm them against that package.
 - SqlPackage still needs the .NET 8 build override on this machine (see Part 1).
+
+GitHub Actions ran the extended workflow after this was written: PR #4 run
+[37412355331](https://github.com/saiff7/campus-data-hub/actions/runs/37412355331) and the `main`
+run [37412910826](https://github.com/saiff7/campus-data-hub/actions/runs/37412910826), all checks
+green.
+
+## 2026-10-07: Power BI Desktop on Windows
+
+Environment: Windows 11, Power BI Desktop September 2026 (2.158.1304.0); the platform ran under
+WSL2 (Ubuntu 26.04) with Docker Desktop, deployed with `make bootstrap` from a clean clone.
+
+| Artifact | Check | Result |
+|---|---|---|
+| Clean setup on WSL2 | `make bootstrap`, `make nightly`, `make extracts`, then all test suites | Same dataset fingerprint as macOS; nightly 325 eligible, 247 created, 51 matched, 27 rejected, balanced; 100, 35 and 131 tests pass. Two environment issues, neither in the project: Microsoft's package feed has no Ubuntu 26.04 entry (the 24.04 feed was used), and an installed ROS distribution put a pytest plugin on `PYTHONPATH` (cleared for the session) |
+| Refresh login | `powerbi_refresh` in `role_ir_analyst` only | Reads `bi.DimStudent` (1,797 rows); `staging.Person` refused with error 229 |
+| Opening the PBIP | Power BI Desktop | Opening from `\\wsl$` did nothing, so the repository was cloned on the Windows drive. **Found:** Desktop rejected the generated TMDL twice: `lineageTag` is not allowed on roles, and `Measures` is a reserved table name. **Fix:** PR #5 (generator, regenerated model, regression test) |
+| Measures against SQL | DAX query view against sqlcmd | All seven pairs equal: census headcount 2025FA 995, census FTE 707.6, yield 2027FA 0.2878, aid offered 2025-2026 2,257,500.00, outstanding balance 2,319,491.20, open exceptions 28, last successful run |
+| Executive Overview page | Built and saved in Desktop; screenshot reviewed | Aggregate cards, funnel and slicer only; no names, ID numbers or contact values. Its column chart shows one total bar rather than one bar per term; to be corrected with the remaining pages |
+| Desktop rewrite of the model | `git status` after saving | Desktop rewrote every TMDL file and added 16 auto date/time tables. These were not committed; the generated model stays the source. Auto date/time should be turned off before the next pages |

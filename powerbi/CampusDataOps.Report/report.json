@@ -1,18 +1,117 @@
 {
-  "config": "{\"version\":\"5.43\",\"themeCollection\":{\"baseTheme\":{\"name\":\"CY24SU06\"}}}",
+  "config": "{\"version\":\"5.68\",\"themeCollection\":{\"baseTheme\":{\"name\":\"CY24SU06\",\"version\":{\"visual\":\"2.13.0\",\"report\":\"3.4.0\",\"page\":\"2.3.1\"}}},\"activeSectionIndex\":0,\"linguisticSchemaSyncVersion\":2,\"objects\":{\"outspacePane\":[{\"properties\":{\"expanded\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}]}}",
+  "filters": "[]",
   "layoutOptimization": 0,
-  "resourcePackages": [],
   "sections": [
     {
-      "name": "ExecutiveOverview",
+      "config": "{\"relationships\":[{\"source\":\"3181009dd7c92bcdd7cb\",\"target\":\"b5edfef6e4ff5dc8932c\",\"type\":3},{\"source\":\"3181009dd7c92bcdd7cb\",\"target\":\"b012bacd97a41dabbda3\",\"type\":3},{\"source\":\"3181009dd7c92bcdd7cb\",\"target\":\"f1830d6c69486f99ec03\",\"type\":3}]}",
       "displayName": "Executive Overview",
       "displayOption": 1,
-      "width": 1280,
-      "height": 720,
-      "config": "{}",
       "filters": "[]",
-      "visualContainers": []
+      "height": 720.00,
+      "name": "ExecutiveOverview",
+      "visualContainers": [
+        {
+          "config": "{\"name\":\"058b22736e4a7d95e355\",\"layouts\":[{\"id\":0,\"position\":{\"x\":348,\"y\":234,\"z\":3000,\"width\":304,\"height\":150,\"tabOrder\":3000}}],\"singleVisual\":{\"visualType\":\"cardVisual\",\"projections\":{\"Data\":[{\"queryRef\":\"_Measures.Aid Recipients\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"_\",\"Entity\":\"_Measures\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Aid Recipients\"},\"Name\":\"_Measures.Aid Recipients\",\"NativeReferenceName\":\"Aid Recipients\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Aid Recipients\"}}}]},\"hasDefaultSort\":true}}",
+          "filters": "[]",
+          "height": 150.00,
+          "width": 304.00,
+          "x": 348.00,
+          "y": 234.00,
+          "z": 3000.00
+        },
+        {
+          "config": "{\"name\":\"3181009dd7c92bcdd7cb\",\"layouts\":[{\"id\":0,\"position\":{\"x\":980,\"y\":427,\"width\":300,\"height\":293,\"z\":7003,\"tabOrder\":7003}}],\"singleVisual\":{\"visualType\":\"slicer\",\"projections\":{\"Values\":[{\"queryRef\":\"DimTerm.AcademicYear\",\"active\":true}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"DimTerm\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"AcademicYear\"},\"Name\":\"DimTerm.AcademicYear\",\"NativeReferenceName\":\"AcademicYear\"}]},\"objects\":{\"data\":[{\"properties\":{\"mode\":{\"expr\":{\"Literal\":{\"Value\":\"'Basic'\"}}}}}],\"general\":[{\"properties\":{}}]}}}",
+          "filters": "[]",
+          "height": 293.00,
+          "width": 300.00,
+          "x": 980.00,
+          "y": 427.00,
+          "z": 7003.00
+        },
+        {
+          "config": "{\"name\":\"42ebb7be5641b9033b6b\",\"layouts\":[{\"id\":0,\"position\":{\"x\":1000,\"y\":244,\"z\":5000,\"width\":280,\"height\":132,\"tabOrder\":5000}}],\"singleVisual\":{\"visualType\":\"funnel\",\"projections\":{\"Y\":[{\"queryRef\":\"_Measures.Applications\"},{\"queryRef\":\"_Measures.Admits\"},{\"queryRef\":\"_Measures.Deposits\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"_\",\"Entity\":\"_Measures\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Applications\"},\"Name\":\"_Measures.Applications\",\"NativeReferenceName\":\"Applications\"},{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Admits\"},\"Name\":\"_Measures.Admits\",\"NativeReferenceName\":\"Admits\"},{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Deposits\"},\"Name\":\"_Measures.Deposits\",\"NativeReferenceName\":\"Deposits\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Applications\"}}}]},\"hasDefaultSort\":true}}",
+          "filters": "[]",
+          "height": 132.00,
+          "width": 280.00,
+          "x": 1000.00,
+          "y": 244.00,
+          "z": 5000.00
+        },
+        {
+          "config": "{\"name\":\"474fc442a1a21e1cf212\",\"layouts\":[{\"id\":0,\"position\":{\"x\":980,\"y\":50,\"z\":6000,\"width\":300,\"height\":110,\"tabOrder\":6000}}],\"singleVisual\":{\"visualType\":\"cardVisual\",\"projections\":{\"Data\":[{\"queryRef\":\"_Measures.Data As Of Label\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"_\",\"Entity\":\"_Measures\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Data As Of Label\"},\"Name\":\"_Measures.Data As Of Label\",\"NativeReferenceName\":\"Data As Of Label\"}]}}}",
+          "filters": "[]",
+          "height": 110.00,
+          "width": 300.00,
+          "x": 980.00,
+          "y": 50.00,
+          "z": 6000.00
+        },
+        {
+          "config": "{\"name\":\"b012bacd97a41dabbda3\",\"layouts\":[{\"id\":0,\"position\":{\"x\":0,\"y\":426,\"z\":7001,\"width\":540,\"height\":294,\"tabOrder\":7001}}],\"singleVisual\":{\"visualType\":\"clusteredColumnChart\",\"projections\":{\"Y\":[{\"queryRef\":\"_Measures.Census Headcount\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"_\",\"Entity\":\"_Measures\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Census Headcount\"},\"Name\":\"_Measures.Census Headcount\",\"NativeReferenceName\":\"Census Headcount\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Census Headcount\"}}}]},\"hasDefaultSort\":true}}",
+          "filters": "[]",
+          "height": 294.00,
+          "width": 540.00,
+          "x": 0.00,
+          "y": 426.00,
+          "z": 7001.00
+        },
+        {
+          "config": "{\"name\":\"b5edfef6e4ff5dc8932c\",\"layouts\":[{\"id\":0,\"position\":{\"x\":0,\"y\":232,\"z\":2000,\"width\":300,\"height\":150,\"tabOrder\":2000}}],\"singleVisual\":{\"visualType\":\"cardVisual\",\"projections\":{\"Data\":[{\"queryRef\":\"_Measures.Yield Rate\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"_\",\"Entity\":\"_Measures\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Yield Rate\"},\"Name\":\"_Measures.Yield Rate\",\"NativeReferenceName\":\"Yield Rate\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Yield Rate\"}}}]},\"hasDefaultSort\":true}}",
+          "filters": "[]",
+          "height": 150.00,
+          "width": 300.00,
+          "x": 0.00,
+          "y": 232.00,
+          "z": 2000.00
+        },
+        {
+          "config": "{\"name\":\"b966ff369ec80cedf8fc\",\"layouts\":[{\"id\":0,\"position\":{\"x\":0,\"y\":38,\"z\":1000,\"width\":300,\"height\":122,\"tabOrder\":1000}}],\"singleVisual\":{\"visualType\":\"cardVisual\",\"projections\":{\"Data\":[{\"queryRef\":\"_Measures.Census FTE\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"_\",\"Entity\":\"_Measures\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Census FTE\"},\"Name\":\"_Measures.Census FTE\",\"NativeReferenceName\":\"Census FTE\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Census FTE\"}}}]},\"hasDefaultSort\":true}}",
+          "filters": "[]",
+          "height": 122.00,
+          "width": 300.00,
+          "x": 0.00,
+          "y": 38.00,
+          "z": 1000.00
+        },
+        {
+          "config": "{\"name\":\"e589aea9fc2726eed2ea\",\"layouts\":[{\"id\":0,\"position\":{\"x\":680,\"y\":234,\"z\":4000,\"width\":300,\"height\":150,\"tabOrder\":4000}}],\"singleVisual\":{\"visualType\":\"cardVisual\",\"projections\":{\"Data\":[{\"queryRef\":\"_Measures.Course Success Rate\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"_\",\"Entity\":\"_Measures\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Course Success Rate\"},\"Name\":\"_Measures.Course Success Rate\",\"NativeReferenceName\":\"Course Success Rate\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Course Success Rate\"}}}]},\"hasDefaultSort\":true}}",
+          "filters": "[]",
+          "height": 150.00,
+          "width": 300.00,
+          "x": 680.00,
+          "y": 234.00,
+          "z": 4000.00
+        },
+        {
+          "config": "{\"name\":\"f1830d6c69486f99ec03\",\"layouts\":[{\"id\":0,\"position\":{\"x\":540,\"y\":426.6666666666667,\"z\":7002,\"width\":300,\"height\":294,\"tabOrder\":7002}}],\"singleVisual\":{\"visualType\":\"cardVisual\",\"projections\":{\"Data\":[{\"queryRef\":\"_Measures.Outstanding Balance\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"_\",\"Entity\":\"_Measures\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Outstanding Balance\"},\"Name\":\"_Measures.Outstanding Balance\",\"NativeReferenceName\":\"Outstanding Balance\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Outstanding Balance\"}}}]},\"hasDefaultSort\":true}}",
+          "filters": "[]",
+          "height": 294.00,
+          "width": 300.00,
+          "x": 540.00,
+          "y": 426.67,
+          "z": 7002.00
+        },
+        {
+          "config": "{\"name\":\"f1e980632c60e9037002\",\"layouts\":[{\"id\":0,\"position\":{\"x\":360,\"y\":28,\"z\":0,\"width\":280,\"height\":132,\"tabOrder\":0}}],\"singleVisual\":{\"visualType\":\"cardVisual\",\"projections\":{\"Data\":[{\"queryRef\":\"_Measures.Census Headcount\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"_\",\"Entity\":\"_Measures\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Census Headcount\"},\"Name\":\"_Measures.Census Headcount\",\"NativeReferenceName\":\"Census Headcount\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Census Headcount\"}}}]},\"hasDefaultSort\":true}}",
+          "filters": "[]",
+          "height": 132.00,
+          "width": 280.00,
+          "x": 360.00,
+          "y": 28.00,
+          "z": 0.00
+        },
+        {
+          "config": "{\"name\":\"f74240a46a5638f10344\",\"layouts\":[{\"id\":0,\"position\":{\"x\":700,\"y\":28,\"z\":7000,\"width\":280,\"height\":132,\"tabOrder\":7000}}],\"singleVisual\":{\"visualType\":\"cardVisual\",\"projections\":{\"Data\":[{\"queryRef\":\"_Measures.Refresh Status\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"_\",\"Entity\":\"_Measures\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"_\"}},\"Property\":\"Refresh Status\"},\"Name\":\"_Measures.Refresh Status\",\"NativeReferenceName\":\"Refresh Status\"}]}}}",
+          "filters": "[]",
+          "height": 132.00,
+          "width": 280.00,
+          "x": 700.00,
+          "y": 28.00,
+          "z": 7000.00
+        }
+      ],
+      "width": 1280.00
     }
-  ],
-  "filters": "[]"
+  ]
 }
